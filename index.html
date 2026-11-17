@@ -867,7 +867,7 @@ body.reduce *,body.reduce *:before,body.reduce *:after{animation-duration:.001s!
   .side{display:none}
   .main{padding:16px 14px 92px}
   .bottom{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:1150;background:rgba(255,255,255,.96);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));justify-content:space-around}
-  .bottom a{display:flex;flex-direction:column;align-items:center;font-size:11px;text-decoration:none;color:var(--muted);padding:4px 8px;border-radius:12px}
+  .bottom a{display:flex;flex-direction:column;align-items:center;font-size:11px;text-decoration:none;color:var(--muted);padding:4px 8px;border-radius:12px;touch-action:manipulation}
   .bottom a.on{color:var(--ink);background:var(--baby);font-weight:600}
   .bottom svg{width:22px;height:22px}
   .g2,.g3,.g4{grid-template-columns:1fr}
@@ -2262,6 +2262,12 @@ PV.shell = () => {
   <nav class="bottom" id="bottom">${BOTTOM.map(([k,t,i])=>`<a href="#${k}" data-k="${k}">${i}<span>${t}</span></a>`).join('')}</nav>
   <button class="fab" id="fab" aria-label="Mở chatbot hướng dẫn">${PV.robot(PV.GUIDES[0])}</button>
   <div class="drawer" id="drawer" aria-hidden="true"></div>`);
+  /* mobile: tapping the tab you're already on (or double-tapping any tab) goes back to Home */
+  $('#bottom').addEventListener('click', e => {
+    const a = e.target.closest('a[data-k]'); if (!a) return;
+    const cur = (location.hash||'#home').slice(1) || 'home';
+    if (a.dataset.k === cur) { e.preventDefault(); location.hash = '#home'; }
+  });
   $('#fab').onclick = () => PV.chatPop();
   document.addEventListener('keydown', e => { if (e.key==='Escape' && $('#chatpop.on')) PV.chatPop(false); });
   window.addEventListener('hashchange', PV.route);

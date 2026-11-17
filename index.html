@@ -681,7 +681,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{font-family:var(--serif);color:var(--ink);font-size:16px;line-height:1.5;
-  background:linear-gradient(135deg,#EAF4FC 0%,#F8FBFD 45%,#DDEBF8 100%) fixed;}
+  background:linear-gradient(135deg,#C8E2F7 0%,#E4F1FC 45%,#9FCBEE 100%) fixed;}
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
 h1,h2,h3,h4{font-weight:600;margin:0 0 .4em;line-height:1.25}
@@ -822,7 +822,7 @@ a{color:var(--navy)}
 
 /* ---------- welcome / onboarding ---------- */
 .overlay{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;overflow:hidden;
-  background:linear-gradient(120deg,#B8D9F2 0%,#FFFFFF 30%,#D5EAF8 55%,#FFFFFF 75%,#A9CDE8 100%);background-size:300% 300%;animation:grad 12s ease infinite}
+  background:linear-gradient(120deg,#86BDE8 0%,#E4F1FC 30%,#A8D0F0 55%,#E4F1FC 75%,#76B1E2 100%);background-size:300% 300%;animation:grad 12s ease infinite}
 @keyframes grad{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .skip{position:absolute;top:18px;right:18px;z-index:3}
 .logoText{font-family:var(--script);font-size:clamp(54px,11vw,128px);color:var(--ink);line-height:1;text-shadow:0 6px 24px rgba(66,107,135,.18)}
@@ -1822,6 +1822,13 @@ body:not(.bg-dark) .overlay .slogan{text-shadow:0 0 2px #fff,0 0 8px #fff,0 0 16
 .ob-slide{position:relative}
 .ob-ic{display:inline-block;margin-right:8px;vertical-align:-3px;font-size:24px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.12));animation:icPop .5s cubic-bezier(.2,1.6,.4,1) .15s both}
 @keyframes icPop{from{transform:scale(0) rotate(-30deg)}}
+.ob-hl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.ob-hl-i{display:flex;gap:10px;align-items:flex-start;background:#F3F8FD;border:1px solid #D6E6F4;border-radius:16px;padding:10px 12px;line-height:1.35}
+.ob-hl-i .e{font-size:24px;line-height:1}
+.ob-hl-i b{display:block;color:#1F4E79;font-size:15px}
+.ob-hl-i small{display:block;color:#3E5C76;font-size:13px;margin-top:2px}
+.ob-team{max-width:55%}
+@media (max-width:520px){.ob-hl{grid-template-columns:1fr;gap:8px}.ob-hl-i{padding:8px 10px}}
 .ob-hi{display:block;margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed #D6E6F4;color:#2F6FA3}
 .ob-foot{margin-top:16px;align-items:center}
 .ob-dots{display:flex;gap:6px}
@@ -2743,7 +2750,7 @@ const EN = {
 'Mở chatbot hướng dẫn':'Open guide chatbot','Đăng xuất':'Log out','Đóng':'Close','Hủy':'Cancel','Lưu':'Save','Xóa':'Delete','Lên':'Up','Xuống':'Down','Tìm':'Search','Gửi':'Send','Nghe':'Listen','Tiếp tục':'Continue','Quay lại':'Back','Bỏ qua':'Skip','Hoàn thành':'Finish','Hoàn tất':'Done','Xác nhận':'Confirm','Để sau':'Later','Bắt đầu':'Start','Di chuyển':'Transport',
 /* welcome / onboarding */
 'Your trip, Your story.':'Your trip, Your story.','Bắt đầu hành trình':'Start your journey','Chạm vào bất kỳ đâu để tiếp tục':'Tap anywhere to continue','Chào mừng bạn trở lại!':'Welcome back!',
-'Xin chào! Mình là':'Hello! I am',', hướng dẫn viên của Personavel.':', your Personavel guide.','Personavel là gì?':'What is Personavel?',
+'Xin chào! Mình là':'Hello! I am',', hướng dẫn viên của Personavel.':', your Personavel guide.','Personavel là gì?':'What is Personavel?','Personavel có gì?':'What Personavel offers','Du lịch tự túc':'Self-guided travel','Tự khám phá TP.HCM với bản đồ và lịch trình của riêng bạn.':'Explore Ho Chi Minh City on your own with your own map and itinerary.','Gợi ý đúng gu':'Picks that suit you','Địa điểm phù hợp sở thích và kinh phí cá nhân.':'Places that match your interests and budget.','Thuyết minh tận nơi':'Stories on the spot','Kể ý nghĩa, giá trị lịch sử – văn hóa của từng điểm tham quan.':'The meaning and historical, cultural value of every sight.','Chatbot đồng hành':'Chatbot by your side','Hỏi đường, gợi ý quán ăn, lên lịch trình nhanh.':'Ask the way, find food, plan a trip fast.','Nhóm 11A13 – THPT Lê Quý Đôn':'Class 11A13 – Lê Quý Đôn High School','Bắt đầu ✨':'Start ✨','Mình nên gọi bạn là gì?':'What should I call you?','Chào':'Hi','! Trả lời vài câu nhanh để mình gợi ý địa điểm hợp sở thích và kinh phí của bạn nhé.':'! Answer a few quick questions so I can suggest places that fit your interests and budget.','Bắt đầu':'Start','Khám phá ngay':'Explore now',
 'Nền tảng bản đồ du lịch tự túc tại TP.HCM, tích hợp hướng dẫn tham quan, thuyết minh và gợi ý lịch trình cá nhân hóa dựa trên sở thích của bạn.':'A self-guided travel map of Ho Chi Minh City with sightseeing guidance, audio stories and personalised itineraries based on what you love.',
 'Ý tưởng hình thành':'How the idea began','Giúp mọi người khám phá TP.HCM theo cách riêng: dễ tìm địa điểm phù hợp, hiểu thêm lịch sử, văn hóa của những nơi mình đi qua.':'To help everyone explore Ho Chi Minh City in their own way: find places that suit them easily and learn more about the history and culture of where they go.',
 'Thông điệp':'Our message','“Không hành trình nào là hoàn hảo, chỉ có hành trình phù hợp với bản thân.”':'“No journey is perfect – only the journey that is right for you.”',
@@ -3891,7 +3898,7 @@ PV.colorUtil = {mix, lum, hsl2hex};
 
 /* ---------- presets ---------- */
 const PASTEL = [
-  {id:'default', vi:'Trắng – xanh', en:'White – blue', c:['#FFFFFF','#DCEBF8','#F4F9FE','#CFE3F6']},
+  {id:'default', vi:'Trắng – xanh', en:'White – blue', c:['#E4F1FC','#9FCBEE','#C8E2F7','#76B1E2']},
   {id:'pink', hue:340,    vi:'Hồng phấn',    en:'Pastel pink',  c:['#FFF7FA','#FAD6E3','#FFEFF4','#F5C6D7']},
   {id:'purple', hue:265,  vi:'Tím oải hương',en:'Lavender',     c:['#FAF7FF','#E2D6F6','#F2ECFD','#D6C7F1']},
   {id:'blue', hue:208,    vi:'Xanh da trời', en:'Sky blue',     c:['#F3F9FF','#C9E1F7','#E5F1FC','#B9D7F3']},
@@ -4850,7 +4857,7 @@ PV.introSwap = (ov, at, fadeBack) => {
   const bg = document.getElementById('pvbg'); const cs = bg ? getComputedStyle(bg) : null;
   const v = (n, d) => (cs && cs.getPropertyValue(n).trim()) || d;
   const themed = PV.state.settings.theme && PV.state.settings.theme.id && PV.state.settings.theme.id !== 'default';
-  const c1 = themed ? v('--b1','#FFFFFF') : '#FFFFFF', c2 = themed ? v('--b2','#DCEBF8') : '#DCEBF8', c3 = themed ? v('--b3','#F4F9FE') : '#BFDCF5', c4 = themed ? v('--b4','#CFE3F6') : '#8FC1EA';
+  const c1 = themed ? v('--b1','#FFFFFF') : '#E4F1FC', c2 = themed ? v('--b2','#DCEBF8') : '#9FCBEE', c3 = themed ? v('--b3','#F4F9FE') : '#BFDCF5', c4 = themed ? v('--b4','#CFE3F6') : '#5E9FD6';
   // brightest of the colours flashes up from below
   const L = h => { h = h.replace('#',''); const n = parseInt(h,16); return (n>>16&255)*.3 + (n>>8&255)*.59 + (n&255)*.11; };
   const sat = h => { h = h.replace('#',''); const n = parseInt(h,16), r=(n>>16&255), g=(n>>8&255), b=(n&255); const mx=Math.max(r,g,b), mn=Math.min(r,g,b); return mx ? (mx-mn)/mx * (mx/255+.35) : 0; };
@@ -4939,24 +4946,23 @@ PV.animateIntroBot = (ov) => {
 PV.intro = (ov, close) => {
   const wc = $('#wc', ov);
   const g = PV.GUIDES[0]; // the first robot to appear always wears the red ao dai
-  const slides = [
-    `<b>Personavel là gì?</b><br>Nền tảng bản đồ du lịch tự túc tại TP.HCM, tích hợp hướng dẫn tham quan, thuyết minh và gợi ý lịch trình cá nhân hóa dựa trên sở thích của bạn.`,
-    `<b>Ý tưởng hình thành</b><br>Giúp mọi người khám phá TP.HCM theo cách riêng: dễ tìm địa điểm phù hợp, hiểu thêm lịch sử, văn hóa của những nơi mình đi qua.`,
-    `<b>Thông điệp</b><br>“Không hành trình nào là hoàn hảo, chỉ có hành trình phù hợp với bản thân.”`,
-    `<b>Đội ngũ thực hiện</b><br>Nhóm học sinh lớp 11A13, THPT Lê Quý Đôn: Khánh An, Minh Hà, Tuấn Kiệt, Thục Uyên, Nguyên Phương – cùng cô Nguyễn Thị Kim Thoa hướng dẫn.`
+  const HL = [
+    ['🧭','Du lịch tự túc','Tự khám phá TP.HCM với bản đồ và lịch trình của riêng bạn.'],
+    ['🎯','Gợi ý đúng gu','Địa điểm phù hợp sở thích và kinh phí cá nhân.'],
+    ['🎧','Thuyết minh tận nơi','Kể ý nghĩa, giá trị lịch sử – văn hóa của từng điểm tham quan.'],
+    ['🤖','Chatbot đồng hành','Hỏi đường, gợi ý quán ăn, lên lịch trình nhanh.']
   ];
-  let i = 0;
   const box = document.createElement('div'); box.className='ob'; wc.replaceWith(box);
   const drawSlide = () => {
-    const IC = ['🗺️','💡','💬','👩‍🎓'];
     box.innerHTML = `<div class="ob-slide">
-      <div class="botline">${PV.robot(g)}<div class="bubble">${i===0?`<span class="ob-hi">Xin chào! Mình là <b>${g.name}</b>, hướng dẫn viên của Personavel.</span>`:''}<span class="ob-ic">${IC[i]||'✨'}</span>${slides[i]}</div></div></div>
-      <div class="row ob-foot"><span class="ob-dots">${slides.map((_,k)=>`<i class="${k===i?'on':k<i?'done':''}"></i>`).join('')}</span><span class="spacer"></span>${i<slides.length-1?'<button class="btn" id="sn">Tiếp tục →</button>':'<button class="btn" id="sn">Bắt đầu hành trình ✨</button>'}</div>`;
+      <div class="botline">${PV.robot(g)}<div class="bubble"><span class="ob-hi">Xin chào! Mình là <b>${g.name}</b>, hướng dẫn viên của Personavel.</span><b>Personavel có gì?</b></div></div>
+      <div class="ob-hl">${HL.map(([e,t,d])=>`<div class="ob-hl-i"><span class="e">${e}</span><div><b>${t}</b><small>${d}</small></div></div>`).join('')}</div></div>
+      <div class="row ob-foot"><span class="tiny muted ob-team">Nhóm 11A13 – THPT Lê Quý Đôn</span><span class="spacer"></span><button class="btn" id="sn">Bắt đầu ✨</button></div>`;
     box.classList.remove('ob-in'); void box.offsetWidth; box.classList.add('ob-in');
-    $('#sn',box).onclick = (e) => { e.stopPropagation(); if (i<slides.length-1){ i++; drawSlide(); } else askName(); };
+    $('#sn',box).onclick = (e) => { e.stopPropagation(); askName(); };
   };
   const askName = () => {
-    box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Xin chào! Mình có thể gọi bạn là gì?</div></div>
+    box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Mình nên gọi bạn là gì?</div></div>
       <form id="nf" class="row"><input class="input" id="nm" placeholder="Tên hoặc biệt danh của bạn" style="flex:1" maxlength="30" autocomplete="name"><button class="btn">Xác nhận</button></form>
       <label class="row tiny muted" style="margin-top:8px"><input type="checkbox" id="rem" checked> Ghi nhớ tên cho lần truy cập sau</label>
       ${(()=>{ const accs=PV.accounts(); const ks=Object.keys(accs); return ks.length ? `<div style="margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)"><b class="small">Hoặc tiếp tục với tài khoản đã lưu trên máy này</b><div class="grid" style="gap:8px;margin-top:8px">${ks.map(k=>`<div class="pitem" style="align-items:center"><div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${accs[k].avatar?`<img src="${accs[k].avatar}" alt="">`:esc(accs[k].name[0].toUpperCase())}</div><div style="flex:1;min-width:0"><b>${esc(accs[k].name)}</b><div class="tiny muted">${esc(accs[k].persona||'')}${accs[k].persona?' · ':''}lưu lúc ${esc(accs[k].savedAt)}</div></div><button class="btn sm" data-acc="${k}">Tiếp tục</button></div>`).join('')}</div></div>` : ''; })()}`;
@@ -4964,39 +4970,20 @@ PV.intro = (ov, close) => {
     $$('[data-acc]',box).forEach(bt => bt.onclick = (e) => { e.stopPropagation(); PV.login(bt.dataset.acc); close(); location.hash='#home'; PV.route(); PV.toast('Chào mừng '+state.profile.name+' quay lại!'); });
     $('#nf',box).onsubmit = (e) => { e.preventDefault(); const name = $('#nm',box).value.trim() || 'bạn';
       state.profile = Object.assign(state.profile||{}, {name, joined: state.profile?.joined || new Date().toLocaleDateString('vi-VN')});
-      if ($('#rem',box).checked) PV.save('profile'); askNew(name); };
+      if ($('#rem',box).checked) PV.save('profile'); quizIntro(name); };
   };
-  const showGallery = (name) => {
-    if (!(window.PV_GALLERY||[]).length) return askNew(name);
-    box.classList.add('wide');
-    box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Chào <b>${esc(name)}</b>! Trước khi bắt đầu, cùng ngắm một vài hình ảnh du lịch đặc sắc tại TP. Hồ Chí Minh nhé.</div></div>
-      <h3 style="margin:4px 0 10px">Hình ảnh du lịch đặc sắc tại TP. Hồ Chí Minh</h3>${PV.galleryHTML('obgal')}
-      <div class="row" style="margin-top:14px"><span class="spacer"></span><button class="btn" id="galnext">Tiếp tục</button></div>`;
-    PV.bindGallery(box);
-    $('#galnext',box).onclick = (e) => { e.stopPropagation(); box.classList.remove('wide'); askNew(name); };
-  };
-  const askNew = (name) => {
-    box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Rất vui được gặp <b>${esc(name)}</b>! Đây có phải lần đầu tiên bạn khám phá Personavel không?</div></div>
-      <div class="opts"><button class="opt" id="n1"><span class="e">🌱</span>Đây là lần đầu tiên</button><button class="opt" id="n2"><span class="e">🔁</span>Mình đã từng sử dụng</button></div>`;
-    $('#n1',box).onclick = (e) => { e.stopPropagation(); quizIntro(true); };
-    $('#n2',box).onclick = (e) => { e.stopPropagation();
-      box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Bạn có muốn thực hiện lại bài phân tích để cập nhật phong cách du lịch của mình không?</div></div>
-      <div class="opts"><button class="opt" id="r1"><span class="e">📝</span>Có, làm lại bài phân tích</button><button class="opt" id="r2"><span class="e">✅</span>Không, giữ kết quả cũ</button></div>`;
-      $('#r1',box).onclick = (e)=>{ e.stopPropagation(); quiz(); };
-      $('#r2',box).onclick = (e)=>{ e.stopPropagation(); finish(false); };
-    };
-  };
-  const quizIntro = () => {
-    box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Trước khi bắt đầu, hãy cùng mình khám phá phong cách du lịch của bạn nhé! Một vài câu hỏi nhỏ sẽ giúp Personavel hiểu sở thích và đề xuất những địa điểm phù hợp hơn.</div></div>
-      <div class="row"><button class="btn ghost" id="qlater">Để sau</button><span class="spacer"></span><button class="btn" id="qstart">Bắt đầu phân tích</button></div>`;
+  const quizIntro = (name) => {
+    box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Chào <b>${esc(name||state.profile.name)}</b>! Trả lời vài câu nhanh để mình gợi ý địa điểm hợp sở thích và kinh phí của bạn nhé.</div></div>
+      <div class="row"><button class="btn ghost" id="qlater">Để sau</button><span class="spacer"></span><button class="btn" id="qstart">Bắt đầu</button></div>`;
     $('#qstart',box).onclick = (e)=>{ e.stopPropagation(); quiz(); };
-    $('#qlater',box).onclick = (e)=>{ e.stopPropagation(); finish(true); };
+    $('#qlater',box).onclick = (e)=>{ e.stopPropagation(); go(true); };
   };
   const quiz = () => { box.onclick = e => e.stopPropagation(); PV.runQuiz(box, ok => {
     if (ok){ const per = state.profile.persona;
-      box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Phân tích xong! Bạn là <b>${per.e} ${esc(per.name)}</b>.<br><span class="small">${esc(per.d)}</span></div></div><div class="row"><span class="spacer"></span><button class="btn" id="fin">Tiếp tục</button></div>`;
-      $('#fin',box).onclick = (e)=>{ e.stopPropagation(); finish(true); };
-    } else finish(true); }); };
+      box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Phân tích xong! Bạn là <b>${per.e} ${esc(per.name)}</b>.<br><span class="small">${esc(per.d)}</span></div></div><div class="row"><span class="spacer"></span><button class="btn" id="fin">Khám phá ngay</button></div>`;
+      $('#fin',box).onclick = (e)=>{ e.stopPropagation(); go(true); };
+    } else go(true); }); };
+  const go = (isNew) => { state.profile.onboarded = true; PV.save('profile'); close(); location.hash = '#home'; PV.route(); if (isNew) setTimeout(PV.greetNew, 600); };
   const finish = (isNew) => {
     box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Tuyệt vời! Hành trình khám phá TP.HCM của bạn đã sẵn sàng. Cùng Personavel bắt đầu nhé!</div></div><div class="row"><span class="spacer"></span><button class="btn" id="go">Khám phá ngay</button></div>`;
     $('#go',box).onclick = (e) => { e.stopPropagation(); state.profile.onboarded = true; PV.save('profile'); close(); location.hash = '#home'; PV.route(); if (isNew) setTimeout(PV.greetNew, 600); };

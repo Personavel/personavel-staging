@@ -867,7 +867,7 @@ body.reduce *,body.reduce *:before,body.reduce *:after{animation-duration:.001s!
   .side{display:none}
   .main{padding:16px 14px 92px}
   .bottom{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:1150;background:rgba(255,255,255,.96);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));justify-content:space-around}
-  .bottom a{display:flex;flex-direction:column;align-items:center;font-size:11px;text-decoration:none;color:var(--muted);padding:4px 8px;border-radius:12px;touch-action:manipulation}
+  .bottom a{display:flex;flex-direction:column;align-items:center;font-size:11px;text-decoration:none;color:var(--muted);padding:4px 4px;flex:1;min-width:0;white-space:nowrap;border-radius:12px;touch-action:manipulation}
   .bottom a.on{color:var(--ink);background:var(--baby);font-weight:600}
   .bottom svg{width:22px;height:22px}
   .g2,.g3,.g4{grid-template-columns:1fr}
@@ -2245,7 +2245,7 @@ const NAV = [
   ['home','Trang chủ',ICON.home], ['map','Bản đồ khám phá',ICON.map], ['trip','Lịch trình của tôi',ICON.trip],
   ['collection','Bộ sưu tập Sài Gòn',ICON.coll], ['chat','Chatbot hướng dẫn',ICON.chat], ['profile','Trang cá nhân',ICON.user], ['about','Giới thiệu dự án',ICON.info]
 ];
-const BOTTOM = [['profile','Cá nhân',ICON.user],['map','Bản đồ',ICON.map],['trip','Lịch trình',ICON.trip],['collection','Bộ sưu tập',ICON.coll],['chat','Chatbot',ICON.chat]];
+const BOTTOM = [['home','Trang chủ',ICON.home],['profile','Cá nhân',ICON.user],['map','Bản đồ',ICON.map],['trip','Lịch trình',ICON.trip],['collection','Bộ sưu tập',ICON.coll],['chat','Chatbot',ICON.chat]];
 
 PV.shell = () => {
   document.body.insertAdjacentHTML('afterbegin', `

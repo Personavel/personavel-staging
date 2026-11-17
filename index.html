@@ -2066,7 +2066,7 @@ PV.weights = () => {
   const w = {history:1, food:1, shopping:.6, checkin:.8, nature:.6, entertainment:.6};
   if (!pr) return w;
   const like = pr.likes || [];
-  const map = {food:'food', history:'history', shopping:'shopping', checkin:'checkin', nature:'nature', art:'history', fun:'entertainment'};
+  const map = {food:'food', history:'history', shopping:'shopping', checkin:'checkin', nature:'nature', relax:'nature', art:'history', fun:'entertainment'};
   for (const k in w) w[k] = .35;
   like.forEach(l => { const c=map[l]; if (c) w[c] = Math.min(2, w[c]+1.2); });
   if (pr.style==='culture') w.history += .6;
@@ -2076,6 +2076,8 @@ PV.weights = () => {
   if ((pr.spaces||[]).includes('museum')) w.history += .3;
   return w;
 };
+/* places that work well with children: open spaces, museums with free child tickets, sweets & snacks */
+PV.KIDS = new Set(['h0','h1','h3','h5','h6','h7','t0','t1','f14','f21','f27','f29','f40','f69','f71','f73','s9','s13']);
 PV.budgetLevel = () => { const b = PV.state.profile?.prefs?.budget; return b==='low'?1 : b==='mid'?2 : b==='high'?3 : b==='lux'?3 : 2; };
 PV.score = (p, w = PV.weights()) => {
   let s = 0; p.cats.forEach((c,i) => s += (w[c]||.3) * (i===0?1:.5));
@@ -2088,6 +2090,10 @@ PV.score = (p, w = PV.weights()) => {
   if ((pr.food||[]).includes('street') && p.cats.includes('food') && (p.price_level||1) <= 1) s += .3;
   if (p.geo==='missing' || !p.coords) s -= 5;
   if (p.warning) s -= .2;
+  if ((pr.needs||[]).includes('kids') || [].concat(pr.with||[]).includes('kids')){   // travelling with children
+    if (PV.KIDS.has(p.id)) s += .5;
+    if (p.id === 'h8') s -= 1.5;                                                  // war images: hard for small children
+  }
   return s;
 };
 PV.recommend = (n=6, filter=()=>true) => D.places.filter(p=>p.coords && filter(p)).map(p=>({p, s:PV.score(p)})).sort((a,b)=>b.s-a.s).slice(0,n).map(x=>x.p);
@@ -2750,7 +2756,7 @@ const EN = {
 'Mở chatbot hướng dẫn':'Open guide chatbot','Đăng xuất':'Log out','Đóng':'Close','Hủy':'Cancel','Lưu':'Save','Xóa':'Delete','Lên':'Up','Xuống':'Down','Tìm':'Search','Gửi':'Send','Nghe':'Listen','Tiếp tục':'Continue','Quay lại':'Back','Bỏ qua':'Skip','Hoàn thành':'Finish','Hoàn tất':'Done','Xác nhận':'Confirm','Để sau':'Later','Bắt đầu':'Start','Di chuyển':'Transport',
 /* welcome / onboarding */
 'Your trip, Your story.':'Your trip, Your story.','Bắt đầu hành trình':'Start your journey','Chạm vào bất kỳ đâu để tiếp tục':'Tap anywhere to continue','Chào mừng bạn trở lại!':'Welcome back!',
-'Xin chào! Mình là':'Hello! I am',', hướng dẫn viên của Personavel.':', your Personavel guide.','Personavel là gì?':'What is Personavel?','Personavel có gì?':'What Personavel offers','Du lịch tự túc':'Self-guided travel','Tự khám phá TP.HCM với bản đồ và lịch trình của riêng bạn.':'Explore Ho Chi Minh City on your own with your own map and itinerary.','Gợi ý đúng gu':'Picks that suit you','Địa điểm phù hợp sở thích và kinh phí cá nhân.':'Places that match your interests and budget.','Thuyết minh tận nơi':'Stories on the spot','Kể ý nghĩa, giá trị lịch sử – văn hóa của từng điểm tham quan.':'The meaning and historical, cultural value of every sight.','Chatbot đồng hành':'Chatbot by your side','Hỏi đường, gợi ý quán ăn, lên lịch trình nhanh.':'Ask the way, find food, plan a trip fast.','Nhóm 11A13 – THPT Lê Quý Đôn':'Class 11A13 – Lê Quý Đôn High School','Bắt đầu ✨':'Start ✨','Mình nên gọi bạn là gì?':'What should I call you?','Chào':'Hi','! Trả lời vài câu nhanh để mình gợi ý địa điểm hợp sở thích và kinh phí của bạn nhé.':'! Answer a few quick questions so I can suggest places that fit your interests and budget.','Bắt đầu':'Start','Khám phá ngay':'Explore now',
+'Xin chào! Mình là':'Hello! I am',', hướng dẫn viên của Personavel.':', your Personavel guide.','Personavel là gì?':'What is Personavel?','Personavel có gì?':'What Personavel offers','Bạn thích trải nghiệm gì khi đi du lịch?':'What do you enjoy when you travel?','Ăn uống, chợ, phố ẩm thực':'Food, markets, food streets','Lịch sử – văn hóa, di tích':'History, culture, landmarks','Bảo tàng – nghệ thuật':'Museums & art','Cà phê, thiên nhiên, đi thong thả':'Cafés, nature, taking it slow','Bạn đi cùng ai?':'Who are you travelling with?','Có trẻ em đi cùng':'With children','Có người lớn tuổi':'With older people','Có người dùng xe lăn / hạn chế đi lại':'With a wheelchair user / limited mobility','Phương tiện bạn ưa thích?':'Preferred ways to get around?','Tuyệt vời! Bạn thuộc tuýp':'Great! You are a','Nào, cùng bắt đầu hành trình của riêng bạn nhé!':'Now, let’s start your very own journey!','Bắt đầu hành trình ✨':'Start your journey ✨','Du lịch tự túc':'Self-guided travel','Tự khám phá TP.HCM với bản đồ và lịch trình của riêng bạn.':'Explore Ho Chi Minh City on your own with your own map and itinerary.','Gợi ý đúng gu':'Picks that suit you','Địa điểm phù hợp sở thích và kinh phí cá nhân.':'Places that match your interests and budget.','Thuyết minh tận nơi':'Stories on the spot','Kể ý nghĩa, giá trị lịch sử – văn hóa của từng điểm tham quan.':'The meaning and historical, cultural value of every sight.','Chatbot đồng hành':'Chatbot by your side','Hỏi đường, gợi ý quán ăn, lên lịch trình nhanh.':'Ask the way, find food, plan a trip fast.','Nhóm 11A13 – THPT Lê Quý Đôn':'Class 11A13 – Lê Quý Đôn High School','Bắt đầu ✨':'Start ✨','Mình nên gọi bạn là gì?':'What should I call you?','Chào':'Hi','! Trả lời vài câu nhanh để mình gợi ý địa điểm hợp sở thích và kinh phí của bạn nhé.':'! Answer a few quick questions so I can suggest places that fit your interests and budget.','Bắt đầu':'Start','Khám phá ngay':'Explore now',
 'Nền tảng bản đồ du lịch tự túc tại TP.HCM, tích hợp hướng dẫn tham quan, thuyết minh và gợi ý lịch trình cá nhân hóa dựa trên sở thích của bạn.':'A self-guided travel map of Ho Chi Minh City with sightseeing guidance, audio stories and personalised itineraries based on what you love.',
 'Ý tưởng hình thành':'How the idea began','Giúp mọi người khám phá TP.HCM theo cách riêng: dễ tìm địa điểm phù hợp, hiểu thêm lịch sử, văn hóa của những nơi mình đi qua.':'To help everyone explore Ho Chi Minh City in their own way: find places that suit them easily and learn more about the history and culture of where they go.',
 'Thông điệp':'Our message','“Không hành trình nào là hoàn hảo, chỉ có hành trình phù hợp với bản thân.”':'“No journey is perfect – only the journey that is right for you.”',
@@ -2990,17 +2996,13 @@ const {D, $, $$, esc, ICON, CATS, state} = PV;
 
 /* ---------- QUIZ (bài phân tích phong cách) ---------- */
 PV.QUIZ = [
-  {k:'likes', multi:true, q:'Bạn thích trải nghiệm những hoạt động nào trong chuyến đi?', o:[['food','🍜','Ăn uống'],['history','🏛️','Tìm hiểu lịch sử'],['art','🎭','Nghệ thuật – bảo tàng'],['shopping','🛍️','Mua sắm'],['checkin','📸','Chụp ảnh check-in'],['nature','🌳','Thiên nhiên – thư giãn'],['fun','🎡','Vui chơi giải trí']]},
+  {k:'likes', multi:true, q:'Bạn thích trải nghiệm gì khi đi du lịch?', o:[['food','🍜','Ăn uống, chợ, phố ẩm thực'],['history','🏛️','Lịch sử – văn hóa, di tích'],['art','🎭','Bảo tàng – nghệ thuật'],['checkin','📸','Chụp ảnh check-in'],['shopping','🛍️','Mua sắm'],['relax','☕','Cà phê, thiên nhiên, đi thong thả'],['fun','🎡','Vui chơi giải trí']]},
   {k:'food', multi:true, q:'Khẩu vị của bạn thiên về…', o:[['viet','🥢','Món Việt'],['asia','🍣','Món Á (Hàn, Nhật, Trung)'],['euro','🍝','Món Âu'],['street','🥟','Ăn vặt đường phố'],['fine','🍷','Nhà hàng sang trọng']]},
   {k:'diet', multi:true, q:'Bạn có lưu ý đặc biệt nào về món ăn không?', o:[['none','👌','Không có'],['veg','🥗','Ăn chay'],['nospicy','🌶️','Không ăn cay'],['allergy','⚠️','Dị ứng (hải sản, đậu…)'],['other','✍️','Khác (tự ghi)']], other:'Ghi rõ lưu ý về món ăn của bạn…'},
   {k:'budget', q:'Ngân sách dự kiến cho một người mỗi ngày?', o:[['low','🪙','Dưới 200.000đ – tiết kiệm'],['mid','💵','200.000 – 500.000đ'],['high','💳','500.000đ – 1 triệu'],['lux','💎','Trên 1 triệu – dịch vụ cao cấp']]},
-  {k:'style', q:'Bạn thuộc tuýp người du lịch nào?', o:[['explore','🧭','Khám phá – đi nhiều'],['relax','☕','Thư giãn – nghỉ ngơi'],['culture','📜','Trải nghiệm văn hóa'],['checkin','✨','Sống ảo – check-in'],['foodie','😋','Du lịch ẩm thực']]},
-  {k:'spaces', multi:true, q:'Không gian bạn yêu thích?', o:[['indoor','🏢','Trong nhà, trung tâm thương mại'],['outdoor','🚶','Ngoài trời, phố đi bộ'],['cafe','☕','Quán cà phê yên tĩnh'],['museum','🖼️','Bảo tàng, di tích'],['market','🧺','Chợ, phố ẩm thực']]},
-  {k:'pace', q:'Nhịp độ di chuyển bạn muốn?', o:[['many','⚡','Đi được nhiều nơi nhất'],['slow','🐢','Thong thả, ít điểm'],['near','📍','Ưu tiên các điểm gần nhau']]},
+  {k:'with', multi:true, q:'Bạn đi cùng ai?', o:[['solo','🧍','Một mình'],['friends','👯','Bạn bè'],['couple','💑','Người thương'],['family','👨‍👩‍👧','Gia đình'],['kids','🧒','Có trẻ em đi cùng'],['elder','👵','Có người lớn tuổi'],['wheel','♿','Có người dùng xe lăn / hạn chế đi lại']]},
   {k:'time', q:'Bạn sẵn sàng tham quan vào khung giờ nào?', o:[['day','🌤️','Cả ngày (sáng – chiều)'],['morning','🌅','Sáng sớm đến trưa'],['evening','🌇','Chiều đến tối'],['night','🌙','Tối đến khuya'],['other','✍️','Khác (tự ghi)']], other:'Ví dụ: 9h – 15h, hoặc chỉ cuối tuần…'},
-  {k:'move', multi:true, q:'Phương tiện bạn ưa thích? (chọn được nhiều)', o:[['walk','🚶','Đi bộ'],['moto','🛵','Xe máy'],['car','🚗','Ô tô'],['taxi','🚕','Taxi / Grab'],['bus','🚌','Xe buýt'],['metro','🚇','Metro']]},
-  {k:'with', q:'Bạn thường đi cùng ai?', o:[['solo','🧍','Một mình'],['friends','👯','Bạn bè'],['family','👨‍👩‍👧','Gia đình'],['couple','💑','Người thương']]},
-  {k:'needs', multi:true, q:'Bạn có nhu cầu đặc biệt khi di chuyển không?', o:[['none','👌','Không có'],['wheel','♿','Xe lăn / hạn chế đi lại'],['kids','🧒','Đi cùng trẻ nhỏ'],['elder','👵','Đi cùng người lớn tuổi']]}
+  {k:'move', multi:true, q:'Phương tiện bạn ưa thích?', o:[['walk','🚶','Đi bộ'],['moto','🛵','Xe máy'],['car','🚗','Ô tô'],['taxi','🚕','Taxi / Grab'],['bus','🚌','Xe buýt'],['metro','🚇','Metro']]}
 ];
 PV.persona = (pr) => {
   const L = pr.likes||[];
@@ -3039,6 +3041,10 @@ PV.runQuiz = (container, done) => {
   };
   const finish = () => {
     const p = state.profile || {name:'bạn', joined:new Date().toLocaleDateString('vi-VN')};
+    const W = [].concat(ans.with||[]), L = ans.likes||[];
+    ans.needs = W.filter(x => ['kids','elder','wheel'].includes(x)); if (!ans.needs.length) ans.needs = ['none'];
+    ans.style = L.includes('relax') ? 'relax' : ans.style; delete ans.spaces;
+    ans.pace = (L.includes('relax') || ans.needs.some(x=>x!=='none')) ? 'slow' : 'normal';
     p.prefs = ans; p.persona = PV.persona(ans); p.quizAt = Date.now(); state.profile = p; PV.save('profile');
     done(true);
   };
@@ -3049,7 +3055,7 @@ PV.runQuiz = (container, done) => {
 PV.views.profile = (m) => {
   const p = state.profile || {name:'Bạn'}; const pr = p.prefs; const per = p.persona;
   const w = PV.weights(); const maxW = Math.max(...Object.values(w));
-  const label = (k,v) => { const Q=PV.QUIZ.find(q=>q.k===k); if(!Q||v==null) return '—'; const arr=[].concat(v); return arr.map(x=> x==='other' && pr[k+'_other'] ? pr[k+'_other'] : (Q.o.find(o=>o[0]===x)||[,,x])[2]).join(', '); };
+  const label = (k,v) => { const Q=PV.QUIZ.find(q=>q.k===k); if(!Q||v==null) return '—'; const arr=[].concat(v); return arr.map(x=> x==='other' && pr[k+'_other'] ? pr[k+'_other'] : PV.tr((Q.o.find(o=>o[0]===x)||[,,x])[2])).join(', '); };
   m.innerHTML = `<h1 class="title">Trang cá nhân</h1><p class="sub">Personavel ghi nhớ bạn là ai, bạn đã khám phá những gì và phong cách du lịch của bạn thay đổi ra sao.</p>
   <div class="grid g2">
    <div class="card"><div class="row" style="gap:16px"><div class="avatar" id="av">${p.avatar?`<img src="${p.avatar}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
@@ -3058,7 +3064,7 @@ PV.views.profile = (m) => {
    <div class="card"><h3>Phân tích phong cách du lịch</h3>
      ${pr ? `<div class="row" style="gap:12px;align-items:flex-start"><div style="font-size:42px">${per.e}</div><div><b style="font-size:18px">${esc(per.name)}</b><p class="small" style="margin:4px 0">${esc(per.d)}</p></div></div>
      ${Object.entries(CATS).map(([k,c])=>`<div class="prefbar"><span>${c.emoji} ${c.name.split(' –')[0]}</span><div class="bar"><i style="width:${Math.round(w[k]/maxW*100)}%;background:${c.color}"></i></div><span class="tiny muted">${Math.round(w[k]/maxW*100)}%</span></div>`).join('')}
-     <div class="small" style="margin-top:8px">💰 ${esc(label('budget',pr.budget))} · 🚶 ${esc(label('pace',pr.pace))} · 🕒 ${esc(label('time',pr.time))} · 🛵 ${esc(label('move',pr.move))}${pr.diet && pr.diet.length && !pr.diet.includes('none') ? ' · 🥗 '+esc(label('diet',pr.diet)) : ''}</div>` : '<p class="muted">Bạn chưa làm bài phân tích phong cách du lịch.</p>'}
+     <div class="small" style="margin-top:8px">💰 ${esc(label('budget',pr.budget))} · 👥 ${esc(label('with',pr.with))} · 🕒 ${esc(label('time',pr.time))} · 🛵 ${esc(label('move',pr.move))}${pr.diet && pr.diet.length && !pr.diet.includes('none') ? ' · 🥗 '+esc(label('diet',pr.diet)) : ''}</div>` : '<p class="muted">Bạn chưa làm bài phân tích phong cách du lịch.</p>'}
      <button class="btn sm" id="pquiz" style="margin-top:12px">${pr?'Làm lại bài phân tích':'Làm bài phân tích'}</button></div>
   </div>
   <div class="grid g2" style="margin-top:18px">
@@ -4980,7 +4986,7 @@ PV.intro = (ov, close) => {
   };
   const quiz = () => { box.onclick = e => e.stopPropagation(); PV.runQuiz(box, ok => {
     if (ok){ const per = state.profile.persona;
-      box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Phân tích xong! Bạn là <b>${per.e} ${esc(per.name)}</b>.<br><span class="small">${esc(per.d)}</span></div></div><div class="row"><span class="spacer"></span><button class="btn" id="fin">Khám phá ngay</button></div>`;
+      box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Tuyệt vời! Bạn thuộc tuýp <b>${per.e} ${esc(per.name)}</b>.<br><span class="small">${esc(per.d)}</span><br>Nào, cùng bắt đầu hành trình của riêng bạn nhé!</div></div><div class="row"><span class="spacer"></span><button class="btn" id="fin">Bắt đầu hành trình ✨</button></div>`;
       $('#fin',box).onclick = (e)=>{ e.stopPropagation(); go(true); };
     } else go(true); }); };
   const go = (isNew) => { state.profile.onboarded = true; PV.save('profile'); close(); location.hash = '#home'; PV.route(); if (isNew) setTimeout(PV.greetNew, 600); };

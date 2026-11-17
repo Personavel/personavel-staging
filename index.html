@@ -747,6 +747,21 @@ a{color:var(--navy)}
 .plist{display:flex;flex-direction:column;gap:8px}
 .pitem{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:14px;background:#fff;border:1px solid var(--line);cursor:pointer}
 .pitem:hover{border-color:var(--powder)}
+.bigacts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px}
+.bigact{display:flex;flex-direction:column;gap:6px;padding:22px 20px;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);text-decoration:none;color:var(--ink);transition:transform .15s, box-shadow .15s}
+.bigact:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.bigact .e{font-size:38px;line-height:1}
+.bigact b{font-size:20px;color:#1F4E79}
+.bigact small{color:var(--muted);font-size:14px;line-height:1.4}
+@media (max-width:820px){.bigacts{grid-template-columns:1fr;gap:10px}.bigact{flex-direction:row;flex-wrap:wrap;align-items:center;column-gap:14px;padding:16px}.bigact .e{font-size:32px}.bigact b{font-size:18px;flex:1}.bigact small{flex-basis:100%;padding-left:46px;margin-top:-4px}}
+.nav2{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.nav2 a{padding:7px 14px;font-size:14px;color:var(--muted)}
+.nav2 a svg{width:18px;height:18px}
+.mprof{display:none}
+@media (max-width:820px){.mprof{display:grid;place-items:center;position:fixed;top:12px;right:12px;z-index:1150;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.95);box-shadow:0 2px 10px rgba(31,78,121,.25);color:#1F4E79}
+  .mprof svg{width:22px;height:22px}.mprof.on{background:#1F4E79;color:#fff}
+  body:has(.drawer.open) .mprof,body:has(#chatpop.on) .mprof{display:none}}
+html.simple #tsave,html.simple #d-visit,html.simple #d-snap,html.simple .lk-strip,html.simple .rv-box,html.simple .rv-favmark,html.simple .rv-mini,html.simple #mapStyleBtn,html.simple .wx-set,html.simple #wxfx,html.simple #wxtip,html.simple .fun-say,html.simple .fun-prop{display:none!important}
 .maplegend{position:absolute;left:10px;bottom:22px;z-index:500;display:flex;flex-direction:column;gap:6px;max-width:calc(100% - 20px);pointer-events:auto}
 .maplegend .seg{display:inline-flex;align-self:flex-start;background:#fff;border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(31,78,121,.22)}
 .maplegend .seg button{border:0;background:transparent;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;color:#3E5C76}
@@ -884,7 +899,7 @@ body.reduce *,body.reduce *:before,body.reduce *:after{animation-duration:.001s!
   .bottom a.on{color:var(--ink);background:var(--baby);font-weight:600}
   .bottom svg{width:22px;height:22px}
   .g2,.g3,.g4{grid-template-columns:1fr}
-  .mapwrap,.chatwrap{grid-template-columns:1fr;height:auto}
+  .mapwrap,.chatwrap{grid-template-columns:minmax(0,1fr);height:auto}
   #map{height:62vh}
   .panel{max-height:none;order:2}
   .guides{flex-direction:row;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.guide{flex:0 0 auto;padding:6px 10px}.guide svg{width:36px;height:36px;flex-basis:36px}.guide .tiny,.guides .card{display:none}.guides .btn{flex:0 0 auto;align-self:center}
@@ -2309,10 +2324,10 @@ PV.speak = async (text, btn) => {
 'use strict';
 const {D, $, $$, esc, ICON, CATS, state} = PV;
 const NAV = [
-  ['home','Trang chủ',ICON.home], ['map','Bản đồ khám phá',ICON.map], ['trip','Lịch trình của tôi',ICON.trip],
-  ['collection','Bộ sưu tập Sài Gòn',ICON.coll], ['chat','Chatbot hướng dẫn',ICON.chat], ['profile','Trang cá nhân',ICON.user], ['about','Giới thiệu dự án',ICON.info]
+  ['home','Trang chủ',ICON.home], ['map','Bản đồ khám phá',ICON.map], ['trip','Lịch trình của tôi',ICON.trip], ['chat','Chatbot hướng dẫn',ICON.chat]
 ];
-const BOTTOM = [['home','Trang chủ',ICON.home],['profile','Cá nhân',ICON.user],['map','Bản đồ',ICON.map],['trip','Lịch trình',ICON.trip],['collection','Bộ sưu tập',ICON.coll],['chat','Chatbot',ICON.chat]];
+const NAV2 = [['profile','Trang cá nhân',ICON.user], ['about','Giới thiệu dự án',ICON.info]];
+const BOTTOM = [['home','Trang chủ',ICON.home],['map','Bản đồ',ICON.map],['trip','Lịch trình',ICON.trip],['chat','Chatbot',ICON.chat]];
 
 PV.shell = () => {
   document.body.insertAdjacentHTML('afterbegin', `
@@ -2321,11 +2336,13 @@ PV.shell = () => {
       <div class="brand">${PV.robot(PV.GUIDES[0],{wave:false}).replace('<svg','<svg style="width:46px"')}<div><b>Personavel</b><small>Your trip · Your story</small></div></div>
       ${PV.langSwitch('side-lang')}
       <nav class="nav">${NAV.map(([k,t,i])=>`<a href="#${k}" data-k="${k}" id="nav-${k}">${i}<span>${t}</span></a>`).join('')}</nav>
+      <nav class="nav nav2">${NAV2.map(([k,t,i])=>`<a href="#${k}" data-k="${k}" id="nav-${k}">${i}<span>${t}</span></a>`).join('')}</nav>
       <div class="side-user" id="sideuser"></div>
       <div class="side-foot">${saigonSketch()}<div style="margin-top:6px">Sài Gòn luôn chào đón bạn!</div></div>
     </aside>
     <main class="main" id="main"></main>
   </div>
+  <a class="mprof" id="mprof" href="#profile" data-k="profile" aria-label="Trang cá nhân">${ICON.user}</a>
   <nav class="bottom" id="bottom">${BOTTOM.map(([k,t,i])=>`<a href="#${k}" data-k="${k}">${i}<span>${t}</span></a>`).join('')}</nav>
   <button class="fab" id="fab" aria-label="Mở chatbot hướng dẫn">${PV.robot(PV.GUIDES[0])}</button>
   <div class="drawer" id="drawer" aria-hidden="true"></div>`);
@@ -2383,7 +2400,7 @@ PV.route = () => {
   PV.drawSideUser();
   const k = (location.hash||'#home').slice(1) || 'home';
   const v = PV.views[k] ? k : 'home';
-  $$('.nav a, .bottom a').forEach(a => a.classList.toggle('on', a.dataset.k === v));
+  $$('.nav a, .bottom a, .mprof').forEach(a => a.classList.toggle('on', a.dataset.k === v));
   PV.closeDrawer(); if (PV.chatPop) PV.chatPop(false);
   if (PV._leave) { PV._leave(); PV._leave = null; }
   const m = $('#main'); m.innerHTML = ''; m.scrollTop = 0; window.scrollTo(0,0);
@@ -2431,25 +2448,12 @@ PV.views.home = (m) => {
   <div class="card hello hero" id="hero">${heroBg()}
     <div class="hero-text"><h1><span class="hi">Xin chào,</span><br><span class="nameline"><em>${esc(p?.name||'bạn')}</em>!${PV.robot(g,{cls:'namebot'})}</span></h1>
     <div class="hero-box"><p class="muted" style="margin:0 0 12px"><span>Hôm nay</span> <b>${g.name}</b> <span>sẽ đồng hành cùng bạn.</span> <span>${esc(g.greet)}</span></p>
-    <div class="row"><a class="btn" href="#chat">Lên lịch trình với ${g.name}</a><a class="btn ghost" href="#map">Mở bản đồ</a></div></div></div>
+    </div></div>
   </div>
-  <div class="grid g4" style="margin-top:18px">
-    <div class="card stat"><b>${visitedN}</b><span class="muted small">địa điểm đã khám phá</span></div>
-    <div class="card stat"><b>${state.points}</b><span class="muted small">điểm tích lũy</span></div>
-    <div class="card stat"><b>${badges}</b><span class="muted small">huy hiệu</span></div>
-    <div class="card stat"><b>${state.trip.stops.length}</b><span class="muted small">điểm trong lịch trình</span></div>
-  </div>
-  <div class="grid g2" style="margin-top:18px">
-    <div class="card"><h3>Gợi ý dành riêng cho bạn</h3>
-      <p class="muted small" style="margin-top:0">${p?.persona ? 'Dựa trên phong cách: <b>'+esc(p.persona.name)+'</b>' : 'Làm bài phân tích phong cách để nhận gợi ý chính xác hơn.'}</p>
-      <div class="plist">${rec.map(PV.pitem).join('')}</div></div>
-    <div class="grid" style="align-content:start">
-      <div class="card"><h3>Con đường kể chuyện hôm nay</h3>${(()=>{ const s=D.streets[Math.floor(Date.now()/864e5)%D.streets.length]; return `<p style="margin:0 0 6px"><b>Đường ${esc(s.name)}</b> <span class="tag">${esc(s.wards)}</span></p><p class="small" style="margin:0 0 10px">${esc(s.story)}</p><div class="row"><button class="btn sm" data-street="${s.id}">Xem trên bản đồ</button><button class="btn sm ghost" data-say="${s.id}">${ICON.speaker.replace('<svg','<svg width=16 height=16')} Nghe thuyết minh</button></div>`; })()}</div>
-      <div class="grid g2 quick">
-        ${[['map','Bản đồ khám phá','Tìm địa điểm, giá vé, giờ mở cửa','#D5EAF8',ICON.map],['trip','Lịch trình của tôi','Sắp xếp điểm đến theo thứ tự','#D6E9F8',ICON.trip],['collection','Bộ sưu tập','Dấu mộc & huy hiệu','#FFF1C1',ICON.coll],['profile','Phong cách du lịch','Xem kết quả phân tích','#F0E8FB',ICON.user]]
-          .map(([k,t,d,c,i])=>`<a href="#${k}"><div class="card"><div class="ico" style="background:${c}">${i}</div><div><b>${t}</b><div class="small muted">${d}</div></div></div></a>`).join('')}
-      </div>
-    </div>
+  <div class="bigacts">
+    <a class="bigact" href="#trip"><span class="e">🗓️</span><b>Lên lịch trình</b><small>Chọn nơi xuất phát, Personavel xếp sẵn điểm đi, ăn, chơi</small></a>
+    <a class="bigact" href="#map"><span class="e">🗺️</span><b>Khám phá bản đồ</b><small>Xem địa điểm gợi ý gần bạn, giá vé, giờ mở cửa</small></a>
+    <a class="bigact" href="#chat"><span class="e">💬</span><b>Hỏi chatbot</b><small>Hỏi đường, tìm quán ăn, nghe thuyết minh</small></a>
   </div>`;
   PV.bindItems(m); bindHero(m);
   $$('[data-street]', m).forEach(b => b.onclick = () => { PV.pendingStreet = b.dataset.street; location.hash = '#map'; });
@@ -2720,7 +2724,7 @@ PV.views.trip = (m) => {
   <div class="grid g2">
     <div class="card">
       <div class="row"><input class="input" id="tt" value="${esc(t.title)}" style="flex:1;min-width:180px"></div>
-      <div class="row" style="margin:10px 0 0"><label class="small" style="flex:1;min-width:220px">🚩 Xuất phát từ <select class="input" id="to" style="width:auto;max-width:100%;padding:6px 10px">
+      <div class="row" style="margin:10px 0 0"><label class="small" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">🚩 Xuất phát từ <select class="input" id="to" style="width:100%;padding:6px 10px">
         <option value="gps" ${t.origin && t.origin.gps ? 'selected':''}>📍 Vị trí hiện tại của tôi</option>
         ${PV.AREAS.map(a=>`<option value="${a.id}" ${t.origin && t.origin.id===a.id ? 'selected':''}>Phường ${a.name} – ${a.hint}</option>`).join('')}
         ${t.origin ? '' : '<option value="" selected>— Chọn điểm xuất phát —</option>'}</select></label></div>
@@ -4830,6 +4834,7 @@ const ACTS = [
 ];
 let timer = null, busy = false, last = '', first = true;
 function play(fab, a){
+  if (PV.SIMPLE) return;
   busy = true;
   const tip = document.createElement('div'); tip.className = 'fun-say'; tip.textContent = PV.L(...a.say);
   const r = fab.getBoundingClientRect(); tip.style.right = (innerWidth - r.right + r.width*.35) + 'px'; tip.style.bottom = (innerHeight - r.top + 8) + 'px';
@@ -5098,28 +5103,46 @@ PV.tour = () => {
   const steps = [
     ['map','Bản đồ khám phá','Tìm địa điểm, xem thông tin, hình ảnh, giá vé, giờ hoạt động và câu chuyện lịch sử của từng nơi, từng con đường.'],
     ['trip','Lịch trình của tôi','Chọn địa điểm, thêm vào lịch trình và sắp xếp chuyến đi. Điểm đến hiện trực tiếp trên bản đồ.'],
-    ['collection','Bộ sưu tập Sài Gòn','Nơi lưu giữ dấu mộc của những địa điểm bạn đã khám phá và các huy hiệu thú vị.'],
-    ['profile','Trang cá nhân','Xem thông tin, điểm tích lũy, nhật ký hành trình và kết quả phân tích phong cách du lịch.'],
-    ['chat','Chatbot hướng dẫn','Đặt câu hỏi, nhờ gợi ý địa điểm và xây dựng lịch trình cùng hướng dẫn viên robot.']
+    ['chat','Chatbot hướng dẫn','Đặt câu hỏi, nhờ gợi ý địa điểm và xây dựng lịch trình cùng hướng dẫn viên robot.'],
+    ['profile','Trang cá nhân','Xem kết quả phân tích phong cách du lịch, đổi ngôn ngữ và cài đặt.']
   ];
   let i = 0; const hole = document.createElement('div'); hole.className='tour-hole'; const tip = document.createElement('div'); tip.className='tour-tip';
   document.body.append(hole, tip);
   const end = () => { hole.remove(); tip.remove(); PV.store.set('toured', true); };
   const draw = () => {
     const [k,t,d] = steps[i];
-    const el = mobile ? $(`.bottom a[data-k="${k}"]`) : $(`#nav-${k}`);
+    const el = mobile ? ($(`.bottom a[data-k="${k}"]`) || (k==='profile' ? $('#mprof') : null)) : $(`#nav-${k}`);
     if (!el){ end(); return; }
     const r = el.getBoundingClientRect();
     Object.assign(hole.style, {left:r.left-6+'px', top:r.top-6+'px', width:r.width+12+'px', height:r.height+12+'px'});
     tip.innerHTML = `<div class="row" style="align-items:flex-start;flex-wrap:nowrap">${PV.robot(PV.GUIDES[0],{wave:false}).replace('<svg','<svg style="width:46px;flex:0 0 46px"')}<div><b>${t}</b><p class="small" style="margin:4px 0 10px">${d}</p></div></div>
       <div class="row"><span class="tiny muted">${i+1}/${steps.length}</span><span class="spacer"></span><button class="btn ghost sm" id="tskip">Bỏ qua</button><button class="btn sm" id="tnext">${i<steps.length-1?'Tiếp tục':'Hoàn tất'}</button></div>`;
     const tw = Math.min(340, innerWidth*.9);
-    if (mobile) Object.assign(tip.style, {left:Math.max(8, Math.min(innerWidth-tw-8, r.left + r.width/2 - tw/2))+'px', top:'', bottom:(innerHeight - r.top + 14)+'px'});
+    if (mobile) Object.assign(tip.style, {left:Math.max(8, Math.min(innerWidth-tw-8, r.left + r.width/2 - tw/2))+'px'}, r.top < innerHeight/2 ? {top:(r.bottom + 14)+'px', bottom:''} : {top:'', bottom:(innerHeight - r.top + 14)+'px'});
     else Object.assign(tip.style, {left:r.right+18+'px', top:Math.max(10, r.top-20)+'px', bottom:''});
     $('#tskip',tip).onclick = end; $('#tnext',tip).onclick = () => { i++; i<steps.length ? draw() : end(); };
   };
   draw();
 };
+
+/* ---------- simple mode: fewer features on screen ----------
+   Hidden: background & map-style pickers, weather effects, dancing robot, points / badges / stamps,
+   diary, photo moments and place reviews. Set PV.SIMPLE = false to bring them all back. */
+PV.SIMPLE = true;
+if (PV.SIMPLE){
+  document.documentElement.classList.add('simple');
+  const noop = () => {};
+  PV.weatherFX = noop; PV.weatherTip = noop; PV.funBot = noop;
+  PV.queueCeleb = noop; PV.celebrate = noop; PV.checkBadges = noop;
+  PV.addPoints = (n) => { PV.state.points += n; PV.save('points'); };          // keep counting quietly, no pop-ups
+  PV.themeSection = () => '';
+  const _prof = PV.views.profile;
+  PV.views.profile = (m) => { _prof(m);
+    $$('#main .card').forEach(c => { const h = (c.querySelector('h3')||{}).textContent || '';
+      if (c.classList.contains('rv-card') || /Nhật ký|Journey diary|Khoảnh khắc|Moments/i.test(h)) c.remove(); });
+    $$('#main .grid.g3.keep').forEach(g => g.remove());
+    $$('#main .grid.g2').forEach(g => { if (!g.children.length) g.remove(); }); };
+}
 
 /* ---------- init ---------- */
 /* first visit: ask which language to use before anything else */

@@ -7,7 +7,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 P = lambda *a: os.path.join(HERE, *a)
 WEB = len(sys.argv) > 1 and sys.argv[1] == 'web'
 APP = ['app1.js', 'app2.js', 'i18n.js', 'app3.js', 'coll.js', 'theme.js', 'moments.js', 'community.js', 'reviews.js', 'visited.js',
-       'weather.js', 'tips.js', 'nlu.js', 'traffic.js', 'tripplus.js', 'nav.js', 'mapstyle.js', 'fun.js', 'gestures.js', 'appreview.js', 'ux.js', 'badges.js', 'guides.js', 'routes.js', 'cloud.js', 'account.js', 'content.js', 'app4.js']
+       'weather.js', 'tips.js', 'nlu.js', 'traffic.js', 'tripplus.js', 'nav.js', 'mapstyle.js', 'fun.js', 'gestures.js', 'appreview.js', 'ux.js', 'badges.js', 'guides.js', 'routes.js', 'cloud.js', 'account.js', 'content.js', 'admin.js', 'app4.js']
 rd = lambda f: open(f, encoding='utf-8').read()
 FONTS = 'https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Dancing+Script:wght@600;700&family=Faustina:wght@400;600;700&display=swap&subset=vietnamese'
 TITLE = 'Personavel – Bản đồ du lịch tự túc TP.HCM'

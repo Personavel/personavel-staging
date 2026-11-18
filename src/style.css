@@ -1641,7 +1641,8 @@ body.glass-dark .rt-legs button{background:rgba(255,255,255,.06);border-color:rg
 .acc-del{color:#B54848!important;border-color:#F3C2C2!important}
 .acc-del-go{background:#B54848!important;border-color:#B54848!important}
 .acc-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding:10px 12px;border-radius:14px;background:#F4F9FE;border:1px solid #D6E6F4}
-.w-login{position:absolute;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;background:rgba(255,255,255,.85)!important}
+/* centred without transform: .btn:hover sets transform and would push the button sideways */
+.w-login{position:absolute;left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100% - 32px);bottom:calc(18px + env(safe-area-inset-bottom));z-index:5;background:rgba(255,255,255,.85)!important}
 .bottom a.has-av svg{display:none}
 .tab-av{width:24px;height:24px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#2F6FA3;color:#fff;font:800 12px Nunito,system-ui,sans-serif;border:2px solid #fff;box-shadow:0 0 0 1px #BCD6EE}
 .tab-av img{width:100%;height:100%;object-fit:cover}

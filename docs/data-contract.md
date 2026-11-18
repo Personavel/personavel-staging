@@ -1,7 +1,7 @@
 # Hợp đồng dữ liệu – Giai đoạn 3
 
 Giao diện (`src/`) chỉ nói chuyện với database qua các hàm dưới đây (`supabase.rpc(tên, tham số)`).
-Đã chạy trên Supabase ngày 18/11/2026 (migration `005_accounts.sql`). Cần thêm hàm → ghi vào `docs/data-requests.md`.
+Đã chạy trên Supabase ngày 18/11/2026 (migration `005_accounts.sql`; `007_my_content_love_tags.sql` ngày 19/11/2026). Cần thêm hàm → ghi vào `docs/data-requests.md`.
 
 🔒 = phải đăng nhập · 👑 = phải có `role = 'admin'`
 
@@ -45,7 +45,7 @@ Lỗi do hàm trả ra nằm trong `error.message`, luôn bắt đầu bằng `P
 | 🔒 `pv_post_save` | `p_id` (null = mới), `p_title (≤ 120), p_body (≤ 4000), p_photos (≤ 6), p_place` | `{id, place, title, body, photos, status, hidden_reason, author_name, author_avatar, created_at, updated_at}` |
 | 🔒 `pv_post_delete` | `p_id` | `true` |
 | `pv_list_posts` | `p_place` (null = tất cả), `p_limit = 10` (≤ 30), `p_before` | `[{id, author_name, author_avatar, place, title, body, photos, created_at, updated_at}]` – chỉ ảnh đã duyệt |
-| 🔒 `pv_my_content()` | — | `[{type, id, kind, target, title, body, stars, photos, status, hidden_reason, created_at, updated_at}]` – bài viết: `kind = null`, `target = place` |
+| 🔒 `pv_my_content()` | — | `[{type, id, kind, target, title, body, stars, love, tags, photos, status, hidden_reason, created_at, updated_at}]` – bài viết: `kind`, `stars`, `love`, `tags` = `null`, `target = place` (`love`/`tags` thêm ở migration 007) |
 | 🔒 `pv_report` | `p_type ('review'\|'post'), p_id, p_reason ('abuse'\|'spam'\|'false_info'\|'bad_photo'\|'other'), p_note (≤ 300)` | `true` – 3 người báo cáo → tự ẩn |
 
 - `status`: `public` · `pending` (còn ảnh chưa duyệt; nội dung chữ vẫn hiện) · `hidden`.

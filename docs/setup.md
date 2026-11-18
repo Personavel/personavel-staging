@@ -89,7 +89,9 @@ Muốn đổi con số: sửa trong hàm `pv_upsert_review` (migration 004) và 
   ```
 - **Khu vực địa điểm:** `python3 src/tools/assign_area.py` → `data/areas.json` + `docs/areas.csv`. Các dòng có cột `can_soat = x` được gán theo điểm gần nhất – nhóm mở CSV trong Google Sheets, sửa cột `ward`, tải về CSV rồi chạy `python3 src/tools/assign_area.py --import docs/areas.csv`. Thêm địa điểm mới ở phường chưa có trong danh sách: thêm vào `WARDS` trong script.
 
+- **SMTP Gmail:** đã cài (Authentication → Emails → SMTP Settings): `smtp.gmail.com:465`, người gửi “Personavel” <khanhannguyen240710@gmail.com> (tạm thời – nên đổi sang Gmail riêng của dự án), mật khẩu = App Password của Gmail đó. Gmail cho ~500 thư/ngày. Đổi Gmail: tạo App Password mới (cần Xác minh 2 bước) → sửa Sender email + Username + Password → Save.
+- **Mẫu email tiếng Việt:** đã cài 6 mẫu (xác nhận đăng ký, lời mời, liên kết đăng nhập, đổi email, đặt lại mật khẩu, mã xác minh). Nguồn: `supabase/templates/build_templates.py` → `*.html` + `subjects.json`. Sửa nội dung → chạy lại script → dán HTML vào Authentication → Emails → Templates → mẫu tương ứng, tiêu đề lấy từ `subjects.json`.
+
 ### Còn phải làm
-- **SMTP riêng** (email đặt lại mật khẩu, xác nhận email): Supabase → Authentication → Emails → SMTP Settings. Không có tên miền riêng → dùng Gmail App Password (`smtp.gmail.com`, cổng 465). Mẫu email tiếng Việt: Authentication → Emails → Templates.
 - **Migration 006 (sau khi giao diện tài khoản lên `main`):** chỉ người đã đăng nhập mới tải ảnh lên `review-photos` (hiện vẫn cho khách để web cũ chạy).
 - **Proxy AI cho chatbot:** cần khóa Anthropic API (có tính phí) đặt bằng `supabase secrets set ANTHROPIC_API_KEY=…`, không bao giờ đưa vào code.

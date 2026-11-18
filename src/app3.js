@@ -73,7 +73,7 @@ PV.views.profile = (m) => {
   const label = (k,v) => { const Q=PV.QUIZ.find(q=>q.k===k); if(!Q||v==null) return '—'; const arr=[].concat(v); return arr.map(x=> x==='other' && pr[k+'_other'] ? pr[k+'_other'] : PV.tr((Q.o.find(o=>o[0]===x)||[,,x])[2])).join(', '); };
   m.innerHTML = `<h1 class="title">Trang cá nhân</h1><p class="sub">Personavel ghi nhớ bạn là ai, bạn đã khám phá những gì và phong cách du lịch của bạn thay đổi ra sao.</p>
   <div class="grid g2">
-   <div class="card"><div class="row" style="gap:16px"><div class="avatar" id="av">${p.avatar?`<img src="${p.avatar}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
+   <div class="card"><div class="row" style="gap:16px"><div class="avatar" id="av">${PV.safeImg(p.avatar)?`<img src="${esc(PV.safeImg(p.avatar))}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
      <div style="flex:1;min-width:0"><h2 class="pname"><span>${esc(p.name)}</span><button class="pedit-ic" id="pedit" aria-label="Chỉnh sửa hồ sơ" title="Chỉnh sửa hồ sơ"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button></h2><div class="small muted">Tham gia ${esc(p.joined||'')}</div><div class="row" style="margin-top:8px"><button class="btn sm ghost" id="pset">${ICON.gear.replace('<svg','<svg width=14 height=14')} Cài đặt</button><button class="btn sm ghost" id="plogout" style="color:#B54848">Đăng xuất</button></div></div></div>
      <div class="grid g3 keep" style="margin-top:16px"><button type="button" class="stat stat-link" data-act="visited" aria-label="Xem danh sách địa điểm đã đi"><b>${Object.keys(state.visited).length}</b><span class="tiny muted">địa điểm ›</span></button><div class="stat"><b>${state.points}</b><span class="tiny muted">điểm</span></div><div class="stat"><b>${PV.badges().filter(b=>b.got).length}</b><span class="tiny muted">huy hiệu</span></div></div></div>
    <div class="card"><h3>Phân tích phong cách du lịch</h3>
@@ -84,7 +84,7 @@ PV.views.profile = (m) => {
   </div>
   <div class="grid g2" style="margin-top:18px">
    <div class="card"><div class="row"><h3 style="margin:0">Nhật ký hành trình</h3><span class="spacer"></span><a class="small" href="#trip">+ Từ lịch trình</a></div>
-     <div class="grid" style="margin-top:10px">${state.diaries.map(d=>`<div class="diary">${d.img?`<img src="${d.img}" alt="">`:'<div class="cover" style="width:90px;height:90px;margin:0;background:var(--baby)">📔</div>'}<div style="flex:1;min-width:0"><b>${esc(d.title)}</b><div class="tiny muted">${esc(d.date)} · ${d.stops.length} địa điểm</div><p class="small" style="margin:4px 0">${esc(d.note||'')}</p><div class="tiny muted">${d.stops.map(id=>PV.byId(id)?.name).filter(Boolean).map(esc).join(' → ')}</div><button class="btn ghost sm" data-del="${d.id}" style="margin-top:6px">Xóa</button></div></div>`).join('') || '<div class="empty small">Chưa có nhật ký. Hoàn thành một lịch trình rồi bấm “Lưu vào nhật ký”.</div>'}</div></div>
+     <div class="grid" style="margin-top:10px">${state.diaries.map(d=>`<div class="diary">${PV.safeImg(d.img)?`<img src="${esc(PV.safeImg(d.img))}" alt="">`:'<div class="cover" style="width:90px;height:90px;margin:0;background:var(--baby)">📔</div>'}<div style="flex:1;min-width:0"><b>${esc(d.title)}</b><div class="tiny muted">${esc(d.date)} · ${d.stops.length} địa điểm</div><p class="small" style="margin:4px 0">${esc(d.note||'')}</p><div class="tiny muted">${d.stops.map(id=>PV.byId(id)?.name).filter(Boolean).map(esc).join(' → ')}</div><button class="btn ghost sm" data-del="${d.id}" style="margin-top:6px">Xóa</button></div></div>`).join('') || '<div class="empty small">Chưa có nhật ký. Hoàn thành một lịch trình rồi bấm “Lưu vào nhật ký”.</div>'}</div></div>
    <div class="card"><h3>Gợi ý từ Personavel</h3><div class="row" style="align-items:flex-start;gap:10px">${PV.robot(PV.GUIDES[0]).replace('<svg','<svg style="width:70px;flex:0 0 70px"')}<div class="bubble small">${(()=>{ const r=PV.recommend(3,p=>!state.visited[p.id]); return 'Dựa trên sở thích của bạn, mình nghĩ bạn sẽ thích: '+r.map(x=>'<b>'+esc(x.name)+'</b>').join(', ')+'.'; })()}</div></div>
      ${pr && pr.quizAt && Date.now()-pr.quizAt > 30*864e5 ? '<p class="small" style="margin-top:12px">⏰ Đã hơn 30 ngày từ lần phân tích trước. Sở thích của bạn có thay đổi không? <a href="#" id="requiz">Cập nhật ngay</a></p>':''}
      <h4 style="margin-top:14px">Đã xem gần đây</h4><div class="plist">${state.history.slice(0,4).map(PV.byId).filter(Boolean).map(PV.pitem).join('') || '<span class="small muted">Chưa có</span>'}</div></div>
@@ -150,7 +150,7 @@ PV.logoutModal = () => {
   const n = {v:Object.keys(state.visited).length, d:state.diaries.length, t:state.trip.stops.length};
   PV.modal(`<div class="row" style="flex-wrap:nowrap;align-items:flex-start">${PV.robot(PV.GUIDES[0],{wave:false}).replace('<svg','<svg style="width:64px;flex:0 0 64px"')}
      <div><h3 style="margin:0 0 4px">Đăng xuất khỏi Personavel?</h3><p class="small muted" style="margin:0">Sau khi đăng xuất, website quay về màn hình chào để <b>người dùng mới</b> bắt đầu từ đầu: nhập tên, làm bài phân tích phong cách và xem hướng dẫn sử dụng.</p></div></div>
-   <div class="card" style="margin:14px 0;padding:12px"><div class="row"><div class="avatar" style="width:44px;height:44px;font-size:18px;border-width:2px">${p.avatar?`<img src="${p.avatar}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
+   <div class="card" style="margin:14px 0;padding:12px"><div class="row"><div class="avatar" style="width:44px;height:44px;font-size:18px;border-width:2px">${PV.safeImg(p.avatar)?`<img src="${esc(PV.safeImg(p.avatar))}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
      <div><b>${esc(p.name)}</b><div class="tiny muted">${p.persona?esc(p.persona.name)+' · ':''}${n.v} địa điểm đã ghé · ${state.points} điểm · ${n.d} nhật ký · lịch trình ${n.t} điểm</div></div></div></div>
    <p class="small" style="margin:0">💾 Dữ liệu của <b>${esc(p.name)}</b> (hồ sơ, lịch trình, dấu mộc, nhật ký) được giữ lại trên máy này. Lần sau chỉ cần chọn tên “${esc(p.name)}” ở màn hình chào để tiếp tục hành trình.</p>
    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn ghost" data-close>Hủy</button><button class="btn" id="lo-keep">Đăng xuất</button></div>`, (box, close) => {
@@ -267,7 +267,7 @@ PV.chatCore = (root) => {
     if (c.trip) extra += `<div class="tripcard"><b>🗺️ ${esc(c.trip.title)}</b><div class="tiny muted">Bắt đầu ${c.trip.start} · ${PV.MODES[c.trip.mode]?.name||''} · ~${PV.fmtKm(c.trip.km||0)} · ~${PV.fmtVnd(c.trip.cost||0)}/người</div>
       <ol>${c.trip.stops.map(s=>{const p=PV.byId(s.id); return p?`<li><b>${s.arrive||''}</b> <span data-pid="${p.id}" style="cursor:pointer;text-decoration:underline dotted">${esc(p.name)}</span>${s.tag?` <span class="tag meal">${s.tag.startsWith('Ăn vặt')?'🍡':'🍽️'} ${esc(s.tag)}</span>`:''} <span class="tiny muted">(${s.stay||p.visit_min} phút${s.leg?' · đi '+s.leg.min+' phút':''})</span></li>`:'';}).join('')}</ol>
       <div class="row"><button class="btn sm" data-usetrip="${idx}">Lưu lịch trình</button><button class="btn ghost sm" data-adjust="${idx}">Điều chỉnh lịch trình</button></div></div>`;
-    if (c.sources && c.sources.length) extra += `<div class="src">📚 Nguồn tham khảo: ${c.sources.map(s=>s.url?`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`:esc(s.name)).join(' · ')}</div>`;
+    if (c.sources && c.sources.length) extra += `<div class="src">📚 Nguồn tham khảo: ${c.sources.map(s=>s.url?`<a href="${esc(PV.safeUrl(s.url))}" target="_blank" rel="noopener">${esc(s.name)}</a>`:esc(s.name)).join(' · ')}</div>`;
     return `<div class="msg"><div class="av">${PV.robot(g,{wave:false})}</div><div class="bubble">${esc(c.t)}${extra}<div style="margin-top:6px"><button class="btn ghost sm" data-say2="${idx}" title="Nghe">${ICON.speaker.replace('<svg','<svg width=14 height=14')}</button></div></div></div>`;
   }
 };
@@ -293,7 +293,7 @@ PV.chatPop = (open) => {
 
 /* ---------- answer engines ---------- */
 PV.answer = async (text) => {
-  const key = state.settings.apiKey;
+  const key = null;   // API keys are never stored or sent from the browser (a server-side proxy will come later)
   let sampler = null;
   try { if (window.claude && window.claude.use) sampler = await window.claude.use('sample'); } catch(e){}
   if (!key && !sampler) return PV.localAnswer(text);

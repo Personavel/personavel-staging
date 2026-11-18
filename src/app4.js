@@ -117,7 +117,7 @@ PV.intro = (ov, close) => {
     box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Mình nên gọi bạn là gì?</div></div>
       <form id="nf" class="row"><input class="input" id="nm" placeholder="Tên hoặc biệt danh của bạn" style="flex:1" maxlength="30" autocomplete="name"><button class="btn">Xác nhận</button></form>
       <label class="row tiny muted" style="margin-top:8px"><input type="checkbox" id="rem" checked> Ghi nhớ tên cho lần truy cập sau</label>
-      ${(()=>{ const accs=PV.accounts(); const ks=Object.keys(accs); return ks.length ? `<div style="margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)"><b class="small">Hoặc tiếp tục với tài khoản đã lưu trên máy này</b><div class="grid" style="gap:8px;margin-top:8px">${ks.map(k=>`<div class="pitem" style="align-items:center"><div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${accs[k].avatar?`<img src="${accs[k].avatar}" alt="">`:esc(accs[k].name[0].toUpperCase())}</div><div style="flex:1;min-width:0"><b>${esc(accs[k].name)}</b><div class="tiny muted">${esc(accs[k].persona||'')}${accs[k].persona?' · ':''}lưu lúc ${esc(accs[k].savedAt)}</div></div><button class="btn sm" data-acc="${k}">Tiếp tục</button></div>`).join('')}</div></div>` : ''; })()}`;
+      ${(()=>{ const accs=PV.accounts(); const ks=Object.keys(accs); return ks.length ? `<div style="margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)"><b class="small">Hoặc tiếp tục với tài khoản đã lưu trên máy này</b><div class="grid" style="gap:8px;margin-top:8px">${ks.map(k=>`<div class="pitem" style="align-items:center"><div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${PV.safeImg(accs[k].avatar)?`<img src="${esc(PV.safeImg(accs[k].avatar))}" alt="">`:esc(accs[k].name[0].toUpperCase())}</div><div style="flex:1;min-width:0"><b>${esc(accs[k].name)}</b><div class="tiny muted">${esc(accs[k].persona||'')}${accs[k].persona?' · ':''}lưu lúc ${esc(accs[k].savedAt)}</div></div><button class="btn sm" data-acc="${k}">Tiếp tục</button></div>`).join('')}</div></div>` : ''; })()}`;
     $('#nm',box).focus();
     $$('[data-acc]',box).forEach(bt => bt.onclick = (e) => { e.stopPropagation(); PV.login(bt.dataset.acc); close(); location.hash='#home'; PV.route(); PV.toast('Chào mừng '+state.profile.name+' quay lại!'); });
     $('#nf',box).onsubmit = (e) => { e.preventDefault(); const name = $('#nm',box).value.trim() || 'bạn';
@@ -197,6 +197,7 @@ PV.langGate = (next) => {
   });
 };
 PV.init = () => {
+  if (state.settings.apiKey || state.settings.model){ delete state.settings.apiKey; delete state.settings.model; PV.save('settings'); }   // never keep API keys in the browser
   document.body.classList.toggle('reduce', !!state.settings.reduce);
   PV.shell();
   PV.i18nInit();

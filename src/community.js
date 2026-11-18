@@ -59,7 +59,7 @@ PV.rvPhotos = {
   MAX: MAXP,
   /* editable strip: thumbnails with ✕ + "add photo" tile */
   editor(photos, id){
-    return `<div class="rp-strip" id="${id}">${photos.map((p,i)=>`<span class="rp-th"><img ${p.u?`src="${esc(p.u)}"`:`data-phk="${esc(p.k)}"`} alt=""><button type="button" class="rp-del" data-i="${i}" aria-label="${L('Xóa ảnh','Remove photo')}">✕</button></span>`).join('')}
+    return `<div class="rp-strip" id="${id}">${photos.map((p,i)=>`<span class="rp-th"><img ${p.u?`src="${esc(PV.safeImg(p.u))}"`:`data-phk="${esc(p.k)}"`} alt=""><button type="button" class="rp-del" data-i="${i}" aria-label="${L('Xóa ảnh','Remove photo')}">✕</button></span>`).join('')}
       ${photos.length < MAXP ? `<label class="rp-add"><input type="file" accept="image/*" multiple hidden><span>📷</span><b>${L('Thêm ảnh','Add photo')}</b><i>${photos.length}/${MAXP}</i></label>` : ''}</div>`;
   },
   bindEditor(root, id, photos, onChange){
@@ -70,8 +70,32 @@ PV.rvPhotos = {
     $$('.rp-del', el).forEach(b => b.onclick = (e) => { e.preventDefault(); const i = +b.dataset.i; const ph = photos[i]; if (ph && ph.k) PV.photoDB.del(ph.k); onChange(photos.filter((_,k)=>k!==i)); });
   },
   /* read-only grid */
-  grid(photos){ if (!photos || !photos.length) return ''; return `<div class="rp-grid n${Math.min(photos.length,4)}">${photos.map((p,i)=>`<button type="button" class="rp-th" data-zoom="${i}"><img ${p.u?`src="${esc(p.u)}"`:`data-phk="${esc(p.k)}"`} alt="" loading="lazy"></button>`).join('')}</div>`; },
+  grid(photos){ if (!photos || !photos.length) return ''; return `<div class="rp-grid n${Math.min(photos.length,4)}">${photos.map((p,i)=>`<button type="button" class="rp-th" data-zoom="${i}"><img ${p.u?`src="${esc(PV.safeImg(p.u))}"`:`data-phk="${esc(p.k)}"`} alt="" loading="lazy"></button>`).join('')}</div>`; },
   bindGrid(root, photos, cap){ hydrate(root); $$('[data-zoom]', root).forEach(b => b.onclick = async () => { const list = []; for (const p of photos){ const s = await srcOf(p); if (s) list.push({src:s, cap}); } if (list.length) PV.lightbox(list, Math.min(+b.dataset.zoom, list.length-1)); }); }
+};
+
+/* ---------- moderation: offensive words (vi + en) and posting rate ---------- */
+/* matched on text without tones, as whole words; the same list is enforced again in the database */
+const BAD = ['dit me','dit cu','dmm','dcm','dkm','vcl','vkl','oc cho','do ngu','thang ngu','con ngu','ngu nhu bo','ngu nhu cho','mat day','khon nan','cho chet','do khon','fuck','fucking','fucker','motherfucker','shit','bitch','cunt','asshole','dickhead','bastard','slut','whore','retard','stfu','nigger','nigga','faggot'];
+const ACCENTED = ['địt','đụ','đụ má','đéo','cặc','lồn','buồi','óc chó','đồ ngu','thằng ngu','con ngu','mất dạy','khốn nạn','chó chết','con đĩ','đĩ'];   // tone matters here: cặc ≠ các, lồn ≠ lớn, buồi ≠ buổi, đéo ≠ đeo
+const squash = t => ' ' + PV.norm(t).replace(/[^a-z0-9]+/g, ' ').replace(/(.)\1{2,}/g, '$1') + ' ';
+PV.badText = (txt) => {
+  const raw = ' ' + String(txt||'').toLowerCase().normalize('NFC').replace(/[^\p{L}\p{N}]+/gu, ' ') + ' ';
+  if (ACCENTED.some(w => raw.includes(' ' + w + ' '))) return true;
+  const n = squash(txt);
+  return BAD.some(w => n.includes(' ' + w + ' '));
+};
+const RATE = {perHour: 5, gapSec: 30};
+PV.canPost = () => {
+  const now = Date.now(), ts = (PV.store.get('rvTimes', []) || []).filter(t => now - t < 3600e3);
+  if (ts.length && now - ts[ts.length-1] < RATE.gapSec * 1000) return {ok:false, msg: L(`Bạn gửi hơi nhanh – đợi ${Math.ceil((RATE.gapSec*1000 - (now - ts[ts.length-1]))/1000)} giây nữa nhé.`, `Too fast – please wait ${Math.ceil((RATE.gapSec*1000 - (now - ts[ts.length-1]))/1000)} s.`)};
+  if (ts.length >= RATE.perHour) return {ok:false, msg: L('Bạn đã gửi 5 đánh giá trong 1 giờ qua – thử lại sau nhé.', 'You have posted 5 reviews in the past hour – try again later.')};
+  return {ok:true, mark: () => PV.store.set('rvTimes', [...ts, now])};
+};
+const checkPost = (r) => {
+  if (PV.badText(r.text) || PV.badText(state.profile?.name || '') || (r.tags||[]).some(PV.badText)) throw Object.assign(new Error('bad'), {userMsg: L('Đánh giá có từ ngữ không phù hợp nên chưa được đăng. Bạn sửa lại giúp mình nhé.', 'Your review contains inappropriate words, so it was not posted. Please edit it.')});
+  const c = PV.canPost(); if (!c.ok) throw Object.assign(new Error('rate'), {userMsg: c.msg});
+  return c;
 };
 
 /* ---------- server calls ---------- */
@@ -90,12 +114,16 @@ PV.community = {
   /* publish (create or update) my review; uploads local photos first and returns the photo list with public URLs */
   async publish(kind, target, r){
     if (!on()) return null;
+    const gate = checkPost(r);
     const photos = [];
     for (const p of (r.photos || [])){ if (p.u) photos.push(p); else { const d = await PV.photoDB.get(p.k); if (d) photos.push({k:p.k, u: await upload(d)}); } }
     const body = {p_token: token(), p_kind: kind, p_target: target, p_author: (state.profile?.name || L('Du khách','Traveller')).slice(0,40),
       p_stars: r.stars || 0, p_love: !!(r.fav || r.love), p_tags: (r.tags||[]).slice(0,10), p_body: (r.text||'').slice(0,800), p_photos: photos.map(p=>p.u).slice(0,MAXP)};
     const res = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_upsert_review`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify(body)});
-    if (!res.ok) throw new Error('publish ' + res.status);
+    if (!res.ok){ let m = ''; try { m = (await res.json()).message || ''; } catch(e){}
+      if (/inappropriate|rate limit/i.test(m)) throw Object.assign(new Error(m), {userMsg: /rate/i.test(m) ? L('Máy chủ đang giới hạn số lần gửi – thử lại sau ít phút nhé.', 'The server is limiting posts – try again in a few minutes.') : L('Đánh giá có từ ngữ không phù hợp nên chưa được đăng.', 'Your review contains inappropriate words and was not posted.')});
+      throw new Error('publish ' + res.status); }
+    gate.mark();
     let id = null; try { id = await res.json(); } catch(e){}
     return {photos, id};
   },
@@ -108,7 +136,7 @@ PV.community = {
         const r = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_list_reviews`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_kind: kind, p_target: target})});
         if (r.ok){ const rows = await r.json();
           const mineIds = new Set([...Object.values(state.reviews||{}).map(v=>v&&v.cloudId), state.appReview && state.appReview.cloudId].filter(Boolean));
-          return {cloud:true, rows: rows.map(x => ({id:x.id, author:x.author, stars:x.stars, love:x.love, tags:x.tags||[], text:x.body||'', photos:(x.photos||[]).map(u=>({u})), at:new Date(x.updated_at).toLocaleDateString('vi-VN'), mine: mineIds.has(x.id)}))}; }
+          return {cloud:true, rows: rows.map(x => ({id:x.id, author:x.author, stars:x.stars, love:x.love, tags:x.tags||[], text:x.body||'', photos:(x.photos||[]).filter(u=>PV.safeImg(u)).map(u=>({u})), at:new Date(x.updated_at).toLocaleDateString('vi-VN'), mine: mineIds.has(x.id)}))}; }
       } catch(e){ /* fall back to this device */ }
     }
     // this device: current profile + every saved profile

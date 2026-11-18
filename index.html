@@ -2191,7 +2191,11 @@ const D = window.PV_DATA;
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const PV = window.PV = {D, $, $$, esc};
+/* only allow image sources we create ourselves (photos read on this device, our own files) or https images */
+const safeImg = u => { u = String(u || ''); return /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(u) || /^https:\/\/[^\s"'<>]+$/.test(u) || /^img\/[\w\/.-]+$/.test(u) ? u : ''; };
+/* links: http(s), tel and mailto only – never javascript: */
+const safeUrl = u => { u = String(u || '').trim(); return /^(https?:|tel:|mailto:)/i.test(u) ? u : '#'; };
+const PV = window.PV = {D, $, $$, esc, safeImg, safeUrl};
 
 /* ---------- storage (localStorage, fallback to memory) ---------- */
 const mem = {};
@@ -2209,7 +2213,7 @@ PV.state = {
   readStreets: S.get('readStreets', {}),
   listened: S.get('listened', 0),
   points: S.get('points', 0),
-  settings: S.get('settings', {reduce:false, apiKey:'', model:'claude-sonnet-5-5', guide:null}),
+  settings: S.get('settings', {reduce:false, guide:null}),
   chat: S.get('chat', []),
   history: S.get('history', [])           // recently viewed place ids
 };
@@ -2599,7 +2603,7 @@ function saigonSketch(){ // original simple line drawing of a twin-spire church 
 }
 
 PV.drawSideUser = () => { const el=$('#sideuser'); if(!el) return; const p=state.profile;
-  el.innerHTML = p&&p.onboarded ? `<div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${p.avatar?`<img src="${p.avatar}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div><div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</b><button class="linkbtn tiny" id="sidelogout">Đăng xuất</button></div>` : '';
+  el.innerHTML = p&&p.onboarded ? `<div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${PV.safeImg(p.avatar)?`<img src="${esc(PV.safeImg(p.avatar))}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div><div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</b><button class="linkbtn tiny" id="sidelogout">Đăng xuất</button></div>` : '';
   const b=$('#sidelogout'); if (b) b.onclick=()=>PV.logoutModal(); };
 
 PV.img = id => (window.PV_IMG && window.PV_IMG[id]) || null;
@@ -3406,7 +3410,7 @@ PV.views.profile = (m) => {
   const label = (k,v) => { const Q=PV.QUIZ.find(q=>q.k===k); if(!Q||v==null) return '—'; const arr=[].concat(v); return arr.map(x=> x==='other' && pr[k+'_other'] ? pr[k+'_other'] : PV.tr((Q.o.find(o=>o[0]===x)||[,,x])[2])).join(', '); };
   m.innerHTML = `<h1 class="title">Trang cá nhân</h1><p class="sub">Personavel ghi nhớ bạn là ai, bạn đã khám phá những gì và phong cách du lịch của bạn thay đổi ra sao.</p>
   <div class="grid g2">
-   <div class="card"><div class="row" style="gap:16px"><div class="avatar" id="av">${p.avatar?`<img src="${p.avatar}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
+   <div class="card"><div class="row" style="gap:16px"><div class="avatar" id="av">${PV.safeImg(p.avatar)?`<img src="${esc(PV.safeImg(p.avatar))}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
      <div style="flex:1;min-width:0"><h2 class="pname"><span>${esc(p.name)}</span><button class="pedit-ic" id="pedit" aria-label="Chỉnh sửa hồ sơ" title="Chỉnh sửa hồ sơ"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button></h2><div class="small muted">Tham gia ${esc(p.joined||'')}</div><div class="row" style="margin-top:8px"><button class="btn sm ghost" id="pset">${ICON.gear.replace('<svg','<svg width=14 height=14')} Cài đặt</button><button class="btn sm ghost" id="plogout" style="color:#B54848">Đăng xuất</button></div></div></div>
      <div class="grid g3 keep" style="margin-top:16px"><button type="button" class="stat stat-link" data-act="visited" aria-label="Xem danh sách địa điểm đã đi"><b>${Object.keys(state.visited).length}</b><span class="tiny muted">địa điểm ›</span></button><div class="stat"><b>${state.points}</b><span class="tiny muted">điểm</span></div><div class="stat"><b>${PV.badges().filter(b=>b.got).length}</b><span class="tiny muted">huy hiệu</span></div></div></div>
    <div class="card"><h3>Phân tích phong cách du lịch</h3>
@@ -3417,7 +3421,7 @@ PV.views.profile = (m) => {
   </div>
   <div class="grid g2" style="margin-top:18px">
    <div class="card"><div class="row"><h3 style="margin:0">Nhật ký hành trình</h3><span class="spacer"></span><a class="small" href="#trip">+ Từ lịch trình</a></div>
-     <div class="grid" style="margin-top:10px">${state.diaries.map(d=>`<div class="diary">${d.img?`<img src="${d.img}" alt="">`:'<div class="cover" style="width:90px;height:90px;margin:0;background:var(--baby)">📔</div>'}<div style="flex:1;min-width:0"><b>${esc(d.title)}</b><div class="tiny muted">${esc(d.date)} · ${d.stops.length} địa điểm</div><p class="small" style="margin:4px 0">${esc(d.note||'')}</p><div class="tiny muted">${d.stops.map(id=>PV.byId(id)?.name).filter(Boolean).map(esc).join(' → ')}</div><button class="btn ghost sm" data-del="${d.id}" style="margin-top:6px">Xóa</button></div></div>`).join('') || '<div class="empty small">Chưa có nhật ký. Hoàn thành một lịch trình rồi bấm “Lưu vào nhật ký”.</div>'}</div></div>
+     <div class="grid" style="margin-top:10px">${state.diaries.map(d=>`<div class="diary">${PV.safeImg(d.img)?`<img src="${esc(PV.safeImg(d.img))}" alt="">`:'<div class="cover" style="width:90px;height:90px;margin:0;background:var(--baby)">📔</div>'}<div style="flex:1;min-width:0"><b>${esc(d.title)}</b><div class="tiny muted">${esc(d.date)} · ${d.stops.length} địa điểm</div><p class="small" style="margin:4px 0">${esc(d.note||'')}</p><div class="tiny muted">${d.stops.map(id=>PV.byId(id)?.name).filter(Boolean).map(esc).join(' → ')}</div><button class="btn ghost sm" data-del="${d.id}" style="margin-top:6px">Xóa</button></div></div>`).join('') || '<div class="empty small">Chưa có nhật ký. Hoàn thành một lịch trình rồi bấm “Lưu vào nhật ký”.</div>'}</div></div>
    <div class="card"><h3>Gợi ý từ Personavel</h3><div class="row" style="align-items:flex-start;gap:10px">${PV.robot(PV.GUIDES[0]).replace('<svg','<svg style="width:70px;flex:0 0 70px"')}<div class="bubble small">${(()=>{ const r=PV.recommend(3,p=>!state.visited[p.id]); return 'Dựa trên sở thích của bạn, mình nghĩ bạn sẽ thích: '+r.map(x=>'<b>'+esc(x.name)+'</b>').join(', ')+'.'; })()}</div></div>
      ${pr && pr.quizAt && Date.now()-pr.quizAt > 30*864e5 ? '<p class="small" style="margin-top:12px">⏰ Đã hơn 30 ngày từ lần phân tích trước. Sở thích của bạn có thay đổi không? <a href="#" id="requiz">Cập nhật ngay</a></p>':''}
      <h4 style="margin-top:14px">Đã xem gần đây</h4><div class="plist">${state.history.slice(0,4).map(PV.byId).filter(Boolean).map(PV.pitem).join('') || '<span class="small muted">Chưa có</span>'}</div></div>
@@ -3483,7 +3487,7 @@ PV.logoutModal = () => {
   const n = {v:Object.keys(state.visited).length, d:state.diaries.length, t:state.trip.stops.length};
   PV.modal(`<div class="row" style="flex-wrap:nowrap;align-items:flex-start">${PV.robot(PV.GUIDES[0],{wave:false}).replace('<svg','<svg style="width:64px;flex:0 0 64px"')}
      <div><h3 style="margin:0 0 4px">Đăng xuất khỏi Personavel?</h3><p class="small muted" style="margin:0">Sau khi đăng xuất, website quay về màn hình chào để <b>người dùng mới</b> bắt đầu từ đầu: nhập tên, làm bài phân tích phong cách và xem hướng dẫn sử dụng.</p></div></div>
-   <div class="card" style="margin:14px 0;padding:12px"><div class="row"><div class="avatar" style="width:44px;height:44px;font-size:18px;border-width:2px">${p.avatar?`<img src="${p.avatar}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
+   <div class="card" style="margin:14px 0;padding:12px"><div class="row"><div class="avatar" style="width:44px;height:44px;font-size:18px;border-width:2px">${PV.safeImg(p.avatar)?`<img src="${esc(PV.safeImg(p.avatar))}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
      <div><b>${esc(p.name)}</b><div class="tiny muted">${p.persona?esc(p.persona.name)+' · ':''}${n.v} địa điểm đã ghé · ${state.points} điểm · ${n.d} nhật ký · lịch trình ${n.t} điểm</div></div></div></div>
    <p class="small" style="margin:0">💾 Dữ liệu của <b>${esc(p.name)}</b> (hồ sơ, lịch trình, dấu mộc, nhật ký) được giữ lại trên máy này. Lần sau chỉ cần chọn tên “${esc(p.name)}” ở màn hình chào để tiếp tục hành trình.</p>
    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn ghost" data-close>Hủy</button><button class="btn" id="lo-keep">Đăng xuất</button></div>`, (box, close) => {
@@ -3600,7 +3604,7 @@ PV.chatCore = (root) => {
     if (c.trip) extra += `<div class="tripcard"><b>🗺️ ${esc(c.trip.title)}</b><div class="tiny muted">Bắt đầu ${c.trip.start} · ${PV.MODES[c.trip.mode]?.name||''} · ~${PV.fmtKm(c.trip.km||0)} · ~${PV.fmtVnd(c.trip.cost||0)}/người</div>
       <ol>${c.trip.stops.map(s=>{const p=PV.byId(s.id); return p?`<li><b>${s.arrive||''}</b> <span data-pid="${p.id}" style="cursor:pointer;text-decoration:underline dotted">${esc(p.name)}</span>${s.tag?` <span class="tag meal">${s.tag.startsWith('Ăn vặt')?'🍡':'🍽️'} ${esc(s.tag)}</span>`:''} <span class="tiny muted">(${s.stay||p.visit_min} phút${s.leg?' · đi '+s.leg.min+' phút':''})</span></li>`:'';}).join('')}</ol>
       <div class="row"><button class="btn sm" data-usetrip="${idx}">Lưu lịch trình</button><button class="btn ghost sm" data-adjust="${idx}">Điều chỉnh lịch trình</button></div></div>`;
-    if (c.sources && c.sources.length) extra += `<div class="src">📚 Nguồn tham khảo: ${c.sources.map(s=>s.url?`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`:esc(s.name)).join(' · ')}</div>`;
+    if (c.sources && c.sources.length) extra += `<div class="src">📚 Nguồn tham khảo: ${c.sources.map(s=>s.url?`<a href="${esc(PV.safeUrl(s.url))}" target="_blank" rel="noopener">${esc(s.name)}</a>`:esc(s.name)).join(' · ')}</div>`;
     return `<div class="msg"><div class="av">${PV.robot(g,{wave:false})}</div><div class="bubble">${esc(c.t)}${extra}<div style="margin-top:6px"><button class="btn ghost sm" data-say2="${idx}" title="Nghe">${ICON.speaker.replace('<svg','<svg width=14 height=14')}</button></div></div></div>`;
   }
 };
@@ -3626,7 +3630,7 @@ PV.chatPop = (open) => {
 
 /* ---------- answer engines ---------- */
 PV.answer = async (text) => {
-  const key = state.settings.apiKey;
+  const key = null;   // API keys are never stored or sent from the browser (a server-side proxy will come later)
   let sampler = null;
   try { if (window.claude && window.claude.use) sampler = await window.claude.use('sample'); } catch(e){}
   if (!key && !sampler) return PV.localAnswer(text);
@@ -4672,7 +4676,7 @@ PV.rvPhotos = {
   MAX: MAXP,
   /* editable strip: thumbnails with ✕ + "add photo" tile */
   editor(photos, id){
-    return `<div class="rp-strip" id="${id}">${photos.map((p,i)=>`<span class="rp-th"><img ${p.u?`src="${esc(p.u)}"`:`data-phk="${esc(p.k)}"`} alt=""><button type="button" class="rp-del" data-i="${i}" aria-label="${L('Xóa ảnh','Remove photo')}">✕</button></span>`).join('')}
+    return `<div class="rp-strip" id="${id}">${photos.map((p,i)=>`<span class="rp-th"><img ${p.u?`src="${esc(PV.safeImg(p.u))}"`:`data-phk="${esc(p.k)}"`} alt=""><button type="button" class="rp-del" data-i="${i}" aria-label="${L('Xóa ảnh','Remove photo')}">✕</button></span>`).join('')}
       ${photos.length < MAXP ? `<label class="rp-add"><input type="file" accept="image/*" multiple hidden><span>📷</span><b>${L('Thêm ảnh','Add photo')}</b><i>${photos.length}/${MAXP}</i></label>` : ''}</div>`;
   },
   bindEditor(root, id, photos, onChange){
@@ -4683,8 +4687,32 @@ PV.rvPhotos = {
     $$('.rp-del', el).forEach(b => b.onclick = (e) => { e.preventDefault(); const i = +b.dataset.i; const ph = photos[i]; if (ph && ph.k) PV.photoDB.del(ph.k); onChange(photos.filter((_,k)=>k!==i)); });
   },
   /* read-only grid */
-  grid(photos){ if (!photos || !photos.length) return ''; return `<div class="rp-grid n${Math.min(photos.length,4)}">${photos.map((p,i)=>`<button type="button" class="rp-th" data-zoom="${i}"><img ${p.u?`src="${esc(p.u)}"`:`data-phk="${esc(p.k)}"`} alt="" loading="lazy"></button>`).join('')}</div>`; },
+  grid(photos){ if (!photos || !photos.length) return ''; return `<div class="rp-grid n${Math.min(photos.length,4)}">${photos.map((p,i)=>`<button type="button" class="rp-th" data-zoom="${i}"><img ${p.u?`src="${esc(PV.safeImg(p.u))}"`:`data-phk="${esc(p.k)}"`} alt="" loading="lazy"></button>`).join('')}</div>`; },
   bindGrid(root, photos, cap){ hydrate(root); $$('[data-zoom]', root).forEach(b => b.onclick = async () => { const list = []; for (const p of photos){ const s = await srcOf(p); if (s) list.push({src:s, cap}); } if (list.length) PV.lightbox(list, Math.min(+b.dataset.zoom, list.length-1)); }); }
+};
+
+/* ---------- moderation: offensive words (vi + en) and posting rate ---------- */
+/* matched on text without tones, as whole words; the same list is enforced again in the database */
+const BAD = ['dit me','dit cu','dmm','dcm','dkm','vcl','vkl','oc cho','do ngu','thang ngu','con ngu','ngu nhu bo','ngu nhu cho','mat day','khon nan','cho chet','do khon','fuck','fucking','fucker','motherfucker','shit','bitch','cunt','asshole','dickhead','bastard','slut','whore','retard','stfu','nigger','nigga','faggot'];
+const ACCENTED = ['địt','đụ','đụ má','đéo','cặc','lồn','buồi','óc chó','đồ ngu','thằng ngu','con ngu','mất dạy','khốn nạn','chó chết','con đĩ','đĩ'];   // tone matters here: cặc ≠ các, lồn ≠ lớn, buồi ≠ buổi, đéo ≠ đeo
+const squash = t => ' ' + PV.norm(t).replace(/[^a-z0-9]+/g, ' ').replace(/(.)\1{2,}/g, '$1') + ' ';
+PV.badText = (txt) => {
+  const raw = ' ' + String(txt||'').toLowerCase().normalize('NFC').replace(/[^\p{L}\p{N}]+/gu, ' ') + ' ';
+  if (ACCENTED.some(w => raw.includes(' ' + w + ' '))) return true;
+  const n = squash(txt);
+  return BAD.some(w => n.includes(' ' + w + ' '));
+};
+const RATE = {perHour: 5, gapSec: 30};
+PV.canPost = () => {
+  const now = Date.now(), ts = (PV.store.get('rvTimes', []) || []).filter(t => now - t < 3600e3);
+  if (ts.length && now - ts[ts.length-1] < RATE.gapSec * 1000) return {ok:false, msg: L(`Bạn gửi hơi nhanh – đợi ${Math.ceil((RATE.gapSec*1000 - (now - ts[ts.length-1]))/1000)} giây nữa nhé.`, `Too fast – please wait ${Math.ceil((RATE.gapSec*1000 - (now - ts[ts.length-1]))/1000)} s.`)};
+  if (ts.length >= RATE.perHour) return {ok:false, msg: L('Bạn đã gửi 5 đánh giá trong 1 giờ qua – thử lại sau nhé.', 'You have posted 5 reviews in the past hour – try again later.')};
+  return {ok:true, mark: () => PV.store.set('rvTimes', [...ts, now])};
+};
+const checkPost = (r) => {
+  if (PV.badText(r.text) || PV.badText(state.profile?.name || '') || (r.tags||[]).some(PV.badText)) throw Object.assign(new Error('bad'), {userMsg: L('Đánh giá có từ ngữ không phù hợp nên chưa được đăng. Bạn sửa lại giúp mình nhé.', 'Your review contains inappropriate words, so it was not posted. Please edit it.')});
+  const c = PV.canPost(); if (!c.ok) throw Object.assign(new Error('rate'), {userMsg: c.msg});
+  return c;
 };
 
 /* ---------- server calls ---------- */
@@ -4703,12 +4731,16 @@ PV.community = {
   /* publish (create or update) my review; uploads local photos first and returns the photo list with public URLs */
   async publish(kind, target, r){
     if (!on()) return null;
+    const gate = checkPost(r);
     const photos = [];
     for (const p of (r.photos || [])){ if (p.u) photos.push(p); else { const d = await PV.photoDB.get(p.k); if (d) photos.push({k:p.k, u: await upload(d)}); } }
     const body = {p_token: token(), p_kind: kind, p_target: target, p_author: (state.profile?.name || L('Du khách','Traveller')).slice(0,40),
       p_stars: r.stars || 0, p_love: !!(r.fav || r.love), p_tags: (r.tags||[]).slice(0,10), p_body: (r.text||'').slice(0,800), p_photos: photos.map(p=>p.u).slice(0,MAXP)};
     const res = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_upsert_review`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify(body)});
-    if (!res.ok) throw new Error('publish ' + res.status);
+    if (!res.ok){ let m = ''; try { m = (await res.json()).message || ''; } catch(e){}
+      if (/inappropriate|rate limit/i.test(m)) throw Object.assign(new Error(m), {userMsg: /rate/i.test(m) ? L('Máy chủ đang giới hạn số lần gửi – thử lại sau ít phút nhé.', 'The server is limiting posts – try again in a few minutes.') : L('Đánh giá có từ ngữ không phù hợp nên chưa được đăng.', 'Your review contains inappropriate words and was not posted.')});
+      throw new Error('publish ' + res.status); }
+    gate.mark();
     let id = null; try { id = await res.json(); } catch(e){}
     return {photos, id};
   },
@@ -4721,7 +4753,7 @@ PV.community = {
         const r = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_list_reviews`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_kind: kind, p_target: target})});
         if (r.ok){ const rows = await r.json();
           const mineIds = new Set([...Object.values(state.reviews||{}).map(v=>v&&v.cloudId), state.appReview && state.appReview.cloudId].filter(Boolean));
-          return {cloud:true, rows: rows.map(x => ({id:x.id, author:x.author, stars:x.stars, love:x.love, tags:x.tags||[], text:x.body||'', photos:(x.photos||[]).map(u=>({u})), at:new Date(x.updated_at).toLocaleDateString('vi-VN'), mine: mineIds.has(x.id)}))}; }
+          return {cloud:true, rows: rows.map(x => ({id:x.id, author:x.author, stars:x.stars, love:x.love, tags:x.tags||[], text:x.body||'', photos:(x.photos||[]).filter(u=>PV.safeImg(u)).map(u=>({u})), at:new Date(x.updated_at).toLocaleDateString('vi-VN'), mine: mineIds.has(x.id)}))}; }
       } catch(e){ /* fall back to this device */ }
     }
     // this device: current profile + every saved profile
@@ -4820,7 +4852,7 @@ function bindBox(dr, id){
     if (r.pub !== false && PV.community.enabled()){
       btn.disabled = true; btn.textContent = PV.L('Đang chia sẻ…','Sharing…');
       try { const out = await PV.community.publish('place', id, r); if (out){ r.photos = out.photos; r.cloudId = out.id; r.cloudAt = Date.now(); PV.save('reviews'); } PV.toast(PV.L('Đã lưu và chia sẻ đánh giá 🌐','Review saved and shared 🌐')); }
-      catch(e){ PV.toast(PV.L('Đã lưu trên máy – chưa chia sẻ được (kiểm tra mạng)','Saved on this device – could not share (check your connection)')); }
+      catch(e){ PV.toast(e.userMsg || PV.L('Đã lưu trên máy – chưa chia sẻ được (kiểm tra mạng)','Saved on this device – could not share (check your connection)')); }
     } else {
       if (r.pub === false && r.cloudAt && PV.community.enabled()){ PV.community.remove('place', id).catch(()=>{}); delete r.cloudAt; PV.save('reviews'); }
       PV.toast(PV.L('Đã lưu nhận xét ✍️','Review saved ✍️'));
@@ -6093,7 +6125,7 @@ function bind(card){
     if (get().pub !== false && PV.community.enabled()){
       btn.disabled = true; btn.textContent = PV.L('Đang gửi…','Sending…');
       try { const out = await PV.community.publish('site', 'personavel', get()); if (out) save({photos: out.photos, cloudId: out.id, cloudAt: Date.now()}); }
-      catch(e){ PV.toast(PV.L('Đã lưu trên máy – chưa gửi lên được (kiểm tra mạng)','Saved on this device – could not send (check your connection)')); }
+      catch(e){ PV.toast(e.userMsg || PV.L('Đã lưu trên máy – chưa gửi lên được (kiểm tra mạng)','Saved on this device – could not send (check your connection)')); }
     } else if (get().pub === false && get().cloudAt && PV.community.enabled()){ PV.community.remove('site','personavel').catch(()=>{}); save({cloudAt: null}); }
     redraw(); thanks(card);
     const f = document.getElementById('arFeed'); if (f) PV.renderFeed(f, 'site', 'personavel', {title: PV.L('🌟 Mọi người nói gì về Personavel','🌟 What people say about Personavel')});
@@ -6241,7 +6273,7 @@ PV.intro = (ov, close) => {
     box.innerHTML = `<div class="botline">${PV.robot(g)}<div class="bubble">Mình nên gọi bạn là gì?</div></div>
       <form id="nf" class="row"><input class="input" id="nm" placeholder="Tên hoặc biệt danh của bạn" style="flex:1" maxlength="30" autocomplete="name"><button class="btn">Xác nhận</button></form>
       <label class="row tiny muted" style="margin-top:8px"><input type="checkbox" id="rem" checked> Ghi nhớ tên cho lần truy cập sau</label>
-      ${(()=>{ const accs=PV.accounts(); const ks=Object.keys(accs); return ks.length ? `<div style="margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)"><b class="small">Hoặc tiếp tục với tài khoản đã lưu trên máy này</b><div class="grid" style="gap:8px;margin-top:8px">${ks.map(k=>`<div class="pitem" style="align-items:center"><div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${accs[k].avatar?`<img src="${accs[k].avatar}" alt="">`:esc(accs[k].name[0].toUpperCase())}</div><div style="flex:1;min-width:0"><b>${esc(accs[k].name)}</b><div class="tiny muted">${esc(accs[k].persona||'')}${accs[k].persona?' · ':''}lưu lúc ${esc(accs[k].savedAt)}</div></div><button class="btn sm" data-acc="${k}">Tiếp tục</button></div>`).join('')}</div></div>` : ''; })()}`;
+      ${(()=>{ const accs=PV.accounts(); const ks=Object.keys(accs); return ks.length ? `<div style="margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)"><b class="small">Hoặc tiếp tục với tài khoản đã lưu trên máy này</b><div class="grid" style="gap:8px;margin-top:8px">${ks.map(k=>`<div class="pitem" style="align-items:center"><div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${PV.safeImg(accs[k].avatar)?`<img src="${esc(PV.safeImg(accs[k].avatar))}" alt="">`:esc(accs[k].name[0].toUpperCase())}</div><div style="flex:1;min-width:0"><b>${esc(accs[k].name)}</b><div class="tiny muted">${esc(accs[k].persona||'')}${accs[k].persona?' · ':''}lưu lúc ${esc(accs[k].savedAt)}</div></div><button class="btn sm" data-acc="${k}">Tiếp tục</button></div>`).join('')}</div></div>` : ''; })()}`;
     $('#nm',box).focus();
     $$('[data-acc]',box).forEach(bt => bt.onclick = (e) => { e.stopPropagation(); PV.login(bt.dataset.acc); close(); location.hash='#home'; PV.route(); PV.toast('Chào mừng '+state.profile.name+' quay lại!'); });
     $('#nf',box).onsubmit = (e) => { e.preventDefault(); const name = $('#nm',box).value.trim() || 'bạn';
@@ -6321,6 +6353,7 @@ PV.langGate = (next) => {
   });
 };
 PV.init = () => {
+  if (state.settings.apiKey || state.settings.model){ delete state.settings.apiKey; delete state.settings.model; PV.save('settings'); }   // never keep API keys in the browser
   document.body.classList.toggle('reduce', !!state.settings.reduce);
   PV.shell();
   PV.i18nInit();

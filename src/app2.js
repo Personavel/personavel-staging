@@ -44,7 +44,7 @@ function saigonSketch(){ // original simple line drawing of a twin-spire church 
 }
 
 PV.drawSideUser = () => { const el=$('#sideuser'); if(!el) return; const p=state.profile;
-  el.innerHTML = p&&p.onboarded ? `<div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${p.avatar?`<img src="${p.avatar}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div><div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</b><button class="linkbtn tiny" id="sidelogout">Đăng xuất</button></div>` : '';
+  el.innerHTML = p&&p.onboarded ? `<div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${PV.safeImg(p.avatar)?`<img src="${esc(PV.safeImg(p.avatar))}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div><div style="min-width:0;flex:1"><b class="small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</b><button class="linkbtn tiny" id="sidelogout">Đăng xuất</button></div>` : '';
   const b=$('#sidelogout'); if (b) b.onclick=()=>PV.logoutModal(); };
 
 PV.img = id => (window.PV_IMG && window.PV_IMG[id]) || null;

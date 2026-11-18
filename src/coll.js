@@ -146,6 +146,7 @@ const LAUREL = (() => { // two small laurel branches around the medal face
   return d;
 })();
 const SC_MED = scallop(50, 84, 31, 14, 3.2);
+PV.PIN = () => PIN;
 PV.medalSVG = (b) => {
   const got = b.got;
   const V = (n, d) => `var(--md-${n},${d})`;
@@ -178,6 +179,7 @@ function defs(){
   </defs></svg>`);
 }
 
+PV.medalDefs = () => defs();
 /* ---------- collection page ---------- */
 PV.views.collection = (m) => {
   defs();
@@ -188,14 +190,12 @@ PV.views.collection = (m) => {
   m.innerHTML = `<h1 class="title">Bộ sưu tập Sài Gòn</h1><p class="sub">Mỗi nơi bạn ghé thăm là một dấu mộc điện tử. Hoàn thành chủ đề để mở khóa huy hiệu.</p>
   <div class="card"><div class="row"><b>Tiến độ khám phá</b><span class="spacer"></span><span class="muted small">${got}/${total} địa điểm · ${state.points} điểm · ${badges.filter(b=>b.got).length}/${badges.length} huy hiệu</span></div><div class="bar" style="margin-top:8px"><i style="width:${Math.round(got/total*100)}%"></i></div></div>
   <h2 class="coll-title">🏅 Huy hiệu <span class="cnt">${badges.filter(b=>b.got).length}/${badges.length}</span></h2>
-  <div class="pinboard"><div class="badges">${badges.map((b,i)=>`<div class="badge2 ${b.got?'got':''}" data-badge="${b.id}">
-      <div class="hang">${PIN}<div class="medal" style="animation-delay:-${(i*0.73)%3.4}s">${PV.medalSVG(b)}</div></div><b>${esc(b.name)}</b><div class="tiny muted">${esc(b.need)}</div>
-      <div class="bar" style="margin-top:8px"><i style="width:${Math.min(100,b.cur/b.max*100)}%"></i></div><div class="tiny">${Math.min(b.cur,b.max)}/${b.max}</div></div>`).join('')}</div></div>
+  <div class="pinboard">${PV.badgeGrid(badges)}</div>
   <h2 class="coll-title">📮 Dấu mộc đã nhận <span class="cnt">${got}</span></h2>
   <div class="paper"><div class="stamps2">${visitedIds.map(id => { const p = PV.byId(id); return `<button class="stamp2 got" data-stamp="${p.id}" data-pid="${p.id}" style="--r:${rot(p.id)}deg;color:${ink(p)}" title="${esc(p.name)}">${PV.stampSVG(p, state.visited[id])}${(()=>{const r=PV.myReview&&PV.myReview(p.id);return r?`${r.fav?'<span class="stamp-fav">❤</span>':''}${r.stars?`<span class="stamp-star">★${r.stars}</span>`:''}`:'';})()}</button>`; }).join('') || '<div class="empty">Chưa có dấu mộc. Khi đến một địa điểm, mở thông tin và bấm “Tôi đã ghé thăm”.</div>'}</div></div>
   <h2 class="coll-title">🗺️ Dấu mộc đang chờ bạn <span class="cnt">${pending.length}</span></h2>
   <div class="stamps2 wait">${pending.map(p=>`<button class="stamp2" data-pid="${p.id}" style="--c:${ink(p)}"><span class="ring">${PV.stampWaitSVG(p)}</span><span class="nm">${esc(p.name)}</span></button>`).join('')}</div>`;
-  PV.bindItems(m);
+  PV.bindItems(m); PV.bindBadges(m);
 };
 
 /* ---------- remember an open place drawer so we can come back to it ---------- */

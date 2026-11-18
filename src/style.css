@@ -1489,4 +1489,3 @@ body.nav-on{overflow:hidden}
 body.glass-dark .stopcard{background:rgba(255,255,255,.07)!important;border-color:var(--glassline)!important;color:var(--ink)}
 body.glass-dark .stopcard .dowhat,body.glass-dark .stopcard .stoptips{color:var(--ink)}
 body.glass-dark details.sd > summary{color:var(--ink)}
-.lg-opt.cur{outline:3px solid var(--acc1,#2F6FA3);outline-offset:2px}

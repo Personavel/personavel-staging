@@ -136,7 +136,7 @@ PV.logout = (keep) => {
   state.settings.guide = null; state.settings.theme = {id:'default'}; PV.save('settings'); // logged-out = default white–blue
   PV.applyTheme && PV.applyTheme({id:'default'});
   if (window.speechSynthesis) speechSynthesis.cancel();
-  location.hash = '#home'; PV.route(); PV.langGate(() => PV.welcome(true), true);   // logged out → ask the language again, like a first visit
+  location.hash = '#home'; PV.route(); PV.welcome(true);
 };
 PV.login = (key) => {
   const accs = PV.accounts(); const a = accs[key]; if (!a) return;

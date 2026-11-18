@@ -1590,3 +1590,9 @@ body.hued .card h2.h3{color:var(--head)!important}body.glass-dark .card h2.h3{co
 .bm-prog .bar{margin:6px 0 4px;height:10px}
 .bm-ok{margin-top:8px;min-width:120px}
 body.glass-dark .bm-how{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+
+/* ===== chat: one session per guide ===== */
+.guide{position:relative}
+.guide .gcount{position:absolute;top:2px;right:4px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#3D7FB8;color:#fff;font:800 11px/18px Nunito,system-ui,sans-serif;text-align:center}
+.guide:focus-visible{outline:3px solid #3D7FB8;outline-offset:2px}
+.askg{margin-top:8px}.askg .btn{display:inline-flex;align-items:center;gap:6px}

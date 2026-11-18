@@ -25,6 +25,8 @@ Bản đồ du lịch tự túc TP.HCM của nhóm 11A13, THPT Lê Quý Đôn. W
 | `src/community.js`, `reviews.js`, `appreview.js` | đánh giá có ảnh, công khai qua Supabase |
 | `src/visited.js` | danh sách địa điểm đã đi |
 | `src/ux.js` | robot tự ẩn khi cuộn, thẻ 3 bước cho người mới |
+| `src/badges.js` | lưới huy hiệu + popup chi tiết; mọi `PV.modal` đóng bằng Esc và giữ focus |
+| `src/guides.js` | phạm vi từng trợ lý (`PV.routeChat`), phiên chat riêng mỗi trợ lý – test: `node tests/chat-routing.test.js` |
 | `src/theme.js`, `style.css` | nền, màu chữ, giao diện |
 | `src/imgs*.js` | ảnh gốc (base64) – `gen_imgs.py` tạo `imgs_desk.js`, `imgs_web.js` và thư mục `img/` |
 

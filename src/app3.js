@@ -208,7 +208,7 @@ PV.views.chat = (m) => {
     <div class="guides">${PV.GUIDES.map(x=>`<div class="guide ${x.id===g.id?'on':''}" data-g="${x.id}">${PV.robot(x,{wave:false})}<div><b>${x.name}</b><div class="tiny muted">${x.role}</div></div></div>`).join('')}
       <button class="btn ghost sm" id="cclear">Cuộc trò chuyện mới</button></div>
     <div class="card chat"><div class="msgs" id="msgs" aria-live="polite"></div>
-      <div class="sugg" id="sugg">${['🗺️ Lên lịch trình 1 ngày','🍜 Gợi ý quán ăn ngon gần đây','🏛️ Kể chuyện về Dinh Độc Lập','🛣️ Đường Nguyễn Huệ có ý nghĩa gì?','🌙 Đi chơi buổi tối ở đâu?','🎁 Mua quà lưu niệm ở đâu?'].map(s=>`<button class="chip">${s}</button>`).join('')}</div>
+      <div class="sugg" id="sugg">${(PV.guideSuggest ? PV.guideSuggest(g.id) : ['🗺️ Lên lịch trình 1 ngày','🍜 Gợi ý quán ăn ngon gần đây','🏛️ Kể chuyện về Dinh Độc Lập','🛣️ Đường Nguyễn Huệ có ý nghĩa gì?','🌙 Đi chơi buổi tối ở đâu?','🎁 Mua quà lưu niệm ở đâu?']).map(s=>`<button class="chip">${s}</button>`).join('')}</div>
       <form class="composer" id="cf"><input class="input" id="ci" placeholder="Hỏi ${g.name} bất cứ điều gì về Sài Gòn…" autocomplete="off"><button class="btn" aria-label="Gửi">${ICON.send.replace('<svg','<svg width=18 height=18')}</button></form></div>
   </div>`;
   { const gr = $('.guides', m); const hint = () => gr.classList.toggle('more-r', gr.scrollWidth - gr.scrollLeft - gr.clientWidth > 8); gr.addEventListener('scroll', hint, {passive:true}); requestAnimationFrame(hint); addEventListener('resize', hint, {passive:true}); }
@@ -258,6 +258,7 @@ PV.chatCore = (root) => {
     $$('[data-usetrip]', r).forEach(b => b.onclick = () => { const c = state.chat[+b.dataset.usetrip]; if (!c||!c.trip) return; state.trip = JSON.parse(JSON.stringify(c.trip)); state.trip.stops.forEach(s=>s.by='ai'); PV.retime(state.trip); PV.save('trip'); PV.toast('Đã lưu lịch trình'); if (location.hash==='#map' && PV.refreshMapTrip) PV.refreshMapTrip(); else location.hash='#trip'; });
     $$('[data-adjust]', r).forEach(b => b.onclick = () => { ci.value='Mình muốn điều chỉnh: '; ci.focus(); });
     $$('[data-say2]', r).forEach(b => b.onclick = () => { const c=state.chat[+b.dataset.say2]; if (c) PV.speak(c.t.replace(/[*_#>]/g,''), b); });
+    $$('[data-askg]', r).forEach(b => b.onclick = () => { const c=state.chat[+b.dataset.askq]; if (PV.switchGuide) PV.switchGuide(b.dataset.askg, c && c.ask && c.ask.q, root); });
   }
   function bubble(c){
     const idx = state.chat.indexOf(c);
@@ -268,6 +269,7 @@ PV.chatCore = (root) => {
     if (c.trip) extra += `<div class="tripcard"><b>🗺️ ${esc(c.trip.title)}</b><div class="tiny muted">Bắt đầu ${c.trip.start} · ${PV.MODES[c.trip.mode]?.name||''} · ~${PV.fmtKm(c.trip.km||0)} · ~${PV.fmtVnd(c.trip.cost||0)}/người</div>
       <ol>${c.trip.stops.map(s=>{const p=PV.byId(s.id); return p?`<li><b>${s.arrive||''}</b> <span data-pid="${p.id}" style="cursor:pointer;text-decoration:underline dotted">${esc(p.name)}</span>${s.tag?` <span class="tag meal">${s.tag.startsWith('Ăn vặt')?'🍡':'🍽️'} ${esc(s.tag)}</span>`:''} <span class="tiny muted">(${s.stay||p.visit_min} phút${s.leg?' · đi '+s.leg.min+' phút':''})</span></li>`:'';}).join('')}</ol>
       <div class="row"><button class="btn sm" data-usetrip="${idx}">Lưu lịch trình</button><button class="btn ghost sm" data-adjust="${idx}">Điều chỉnh lịch trình</button></div></div>`;
+    if (c.ask){ const to = PV.GUIDES.find(x=>x.id===c.ask.g); if (to) extra += `<div class="askg"><button class="btn sm" type="button" data-askg="${to.id}" data-askq="${idx}">${PV.robot(to,{wave:false}).replace('<svg','<svg style="width:22px;height:22px;flex:0 0 22px" aria-hidden="true"')} ${PV.L('Hỏi','Ask')} ${esc(to.name)}</button></div>`; }
     if (c.sources && c.sources.length) extra += `<div class="src">📚 Nguồn tham khảo: ${c.sources.map(s=>s.url?`<a href="${esc(PV.safeUrl(s.url))}" target="_blank" rel="noopener">${esc(s.name)}</a>`:esc(s.name)).join(' · ')}</div>`;
     return `<div class="msg"><div class="av">${PV.robot(g,{wave:false})}</div><div class="bubble">${esc(c.t)}${extra}<div style="margin-top:6px"><button class="btn ghost sm" data-say2="${idx}" title="Nghe">${ICON.speaker.replace('<svg','<svg width=14 height=14')}</button></div></div></div>`;
   }
@@ -283,7 +285,7 @@ PV.chatPop = (open) => {
   el.innerHTML = `<div class="cp-head">${PV.robot(g,{wave:false}).replace('<svg','<svg style="width:40px;flex:0 0 40px"')}<div style="flex:1;min-width:0"><b>${g.name}</b><div class="tiny muted">Hướng dẫn viên của bạn</div></div>
       <a class="btn ghost sm" href="#chat" id="cpfull" title="Mở trang chatbot đầy đủ">⤢</a><button class="btn ghost sm" id="cpclose" aria-label="Đóng">✕</button></div>
     <div class="msgs" aria-live="polite"></div>
-    <div class="sugg">${['🗺️ Lên lịch trình 1 ngày','🍜 Gợi ý quán ăn ngon gần đây','🌙 Đi chơi buổi tối ở đâu?'].map(s=>`<button class="chip">${s}</button>`).join('')}</div>
+    <div class="sugg">${(PV.guideSuggest ? PV.guideSuggest(g.id).slice(0,3) : ['🗺️ Lên lịch trình 1 ngày','🍜 Gợi ý quán ăn ngon gần đây','🌙 Đi chơi buổi tối ở đâu?']).map(s=>`<button class="chip">${s}</button>`).join('')}</div>
     <form class="composer"><input class="input" placeholder="Hỏi ${g.name} bất cứ điều gì về Sài Gòn…" autocomplete="off"><button class="btn" aria-label="Gửi">${ICON.send.replace('<svg','<svg width=18 height=18')}</button></form>`;
   el.classList.add('on'); el.setAttribute('aria-hidden','false');
   el.querySelector('#cpclose').onclick = () => PV.chatPop(false);

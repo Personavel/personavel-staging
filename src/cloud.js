@@ -12,7 +12,7 @@ const REF = (BASE.match(/https:\/\/([a-z0-9]+)\./) || [])[1];
 const SKEY = `sb-${REF}-auth-token`;
 const C = PV.cloud = {user: null, me: null, synced: false, missing: new Set(), listeners: []};
 PV.onCloud = (fn) => { C.listeners.push(fn); };
-const emit = () => C.listeners.forEach(fn => { try { fn(C); } catch(e){ console.info('[cloud]', e); } });
+const emit = () => { document.body && document.body.classList.toggle('pv-in', !!C.user); C.listeners.forEach(fn => { try { fn(C); } catch(e){ console.info('[cloud]', e); } }); };
 
 /* ---------- readable errors ---------- */
 const MSG = {

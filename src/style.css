@@ -1707,3 +1707,8 @@ body.glass-dark :is(.ad-item,.ad-ph,.ad-tabs button,.rp-r){background:rgba(255,2
 .ar-opt b{min-width:28px;text-align:center;padding:2px 8px;border-radius:999px;background:#EAF4FD;font-size:12px}
 .ar-opt.on{border-color:#2F6FA3;background:#EAF4FD}
 body.glass-dark :is(.ar-btn,.ar-opt){background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink-l)}
+
+/* photo tile: signed in → "Add photo", signed out → "Sign in to add photos" */
+.rp-add .rp-out{display:block;font-size:11px;line-height:1.2;text-align:center}.rp-add .rp-in{display:none}
+body.pv-in .rp-add .rp-out{display:none}body.pv-in .rp-add .rp-in{display:block}
+body:not(.pv-in) .rp-add i{display:none}

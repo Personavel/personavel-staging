@@ -67,13 +67,13 @@ PV.rvPhotos = {
   /* editable strip: thumbnails with ✕ + "add photo" tile */
   editor(photos, id){
     return `<div class="rp-strip" id="${id}">${photos.map((p,i)=>`<span class="rp-th"><img ${p.u?`src="${esc(PV.safeImg(p.u))}"`:`data-phk="${esc(p.k)}"`} alt=""><button type="button" class="rp-del" data-i="${i}" aria-label="${L('Xóa ảnh','Remove photo')}">✕</button></span>`).join('')}
-      ${photos.length < MAXP ? `<label class="rp-add"><input type="file" accept="image/*" multiple hidden><span>📷</span><b>${L('Thêm ảnh','Add photo')}</b><i>${photos.length}/${MAXP}</i></label>` : ''}</div>`;
+      ${photos.length < MAXP ? `<label class="rp-add"><input type="file" accept="image/*" multiple hidden><span>📷</span><b class="rp-in">${L('Thêm ảnh','Add photo')}</b><b class="rp-out">🔒 ${L('Đăng nhập để thêm ảnh','Sign in to add photos')}</b><i>${photos.length}/${MAXP}</i></label>` : ''}</div>`;
   },
   bindEditor(root, id, photos, onChange){
     const el = $('#' + id, root); if (!el) return;
     hydrate(el);
     const inp = el.querySelector('input[type=file]');
-    if (inp) inp.addEventListener('click', (e) => { if (PV.cloud && !PV.cloud.user){ e.preventDefault(); PV.requireLogin(L('Đăng nhập để đăng ảnh kèm đánh giá.', 'Sign in to add photos to your review.')); } });
+    if (inp) inp.addEventListener('click', (e) => { if (PV.cloud && !PV.cloud.user){ e.preventDefault(); PV.requireLogin(L('Đăng nhập để thêm ảnh.', 'Sign in to add photos.')); } });
     if (inp) inp.onchange = async () => { const lbl = inp.closest('.rp-add'); lbl.classList.add('busy'); const next = await addFiles(inp.files, photos); onChange(next); };
     $$('.rp-del', el).forEach(b => b.onclick = (e) => { e.preventDefault(); const i = +b.dataset.i; const ph = photos[i]; if (ph && ph.k) PV.photoDB.del(ph.k); onChange(photos.filter((_,k)=>k!==i)); });
   },
@@ -107,12 +107,20 @@ const checkPost = (r) => {
 };
 
 /* ---------- server calls ---------- */
+/* photos are uploaded with the visitor's own session (only signed-in accounts may upload – migration 006) */
+const loginMsg = () => L('Đăng nhập để thêm ảnh.', 'Sign in to add photos.');
 async function upload(dataUrl){
+  const s = PV.session ? await PV.session() : null;
+  if (!s || !s.access_token) throw Object.assign(new Error('PV_AUTH'), {code: 'PV_AUTH', userMsg: loginMsg()});
   const blob = await (await fetch(dataUrl)).blob();
   const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
   const path = `${new Date().toISOString().slice(0,7)}/${crypto.randomUUID ? crypto.randomUUID() : newKey()}.${ext}`;
-  const r = await fetch(`${CLOUD.url}/storage/v1/object/review-photos/${path}`, {method:'POST', headers: hdr({'content-type': blob.type, 'x-upsert':'false'}), body: blob});
-  if (!r.ok) throw new Error('upload ' + r.status);
+  let r; try { r = await fetch(`${CLOUD.url}/storage/v1/object/review-photos/${path}`, {method:'POST', headers: {apikey: CLOUD.key, Authorization: 'Bearer ' + s.access_token, 'content-type': blob.type, 'x-upsert':'false'}, body: blob}); }
+  catch(e){ throw Object.assign(new Error('PV_NET'), {code: 'PV_NET', userMsg: PV.errText ? PV.errText('PV_NET') : ''}); }
+  if (!r.ok){
+    const code = r.status === 401 ? 'PV_AUTH' : r.status === 403 ? 'PV_BANNED' : r.status === 413 ? 'PV_TOO_LONG' : 'PV_UNKNOWN';
+    throw Object.assign(new Error('upload ' + r.status), {code, userMsg: code === 'PV_AUTH' ? loginMsg() : code === 'PV_BANNED' ? L('Tài khoản chưa được phép tải ảnh lên (có thể đang bị khóa đăng bài).', 'This account may not upload photos right now (posting may be blocked).') : code === 'PV_TOO_LONG' ? L('Ảnh quá lớn.', 'The photo is too large.') : (PV.errText ? PV.errText('PV_UNKNOWN') : '')});
+  }
   return `${CLOUD.url}/storage/v1/object/public/review-photos/${path}`;
 }
 const colorOf = (s) => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) % 360; return `hsl(${h} 55% 52%)`; };
@@ -125,8 +133,9 @@ PV.community = {
     if (!on()) return null;
     const signedIn = !!(PV.cloud && PV.cloud.user);
     const gate = signedIn ? (() => { if (PV.badText(r.text) || (r.tags||[]).some(PV.badText)) throw Object.assign(new Error('bad'), {userMsg: PV.errText('PV_BAD_WORDS')}); return {mark(){}}; })() : checkPost(r);
-    const photos = []; let fresh = 0;
-    for (const p of (r.photos || [])){ if (p.u) photos.push({k:p.k, u:p.u}); else { const d = await PV.photoDB.get(p.k); if (d){ photos.push({k:p.k, u: await upload(d)}); fresh++; } } }
+    const photos = []; let fresh = 0, skipped = 0;
+    for (const p of (r.photos || [])){ if (p.u) photos.push({k:p.k, u:p.u}); else if (!signedIn) skipped++; else { const d = await PV.photoDB.get(p.k); if (d){ photos.push({k:p.k, u: await upload(d)}); fresh++; } } }
+    if (skipped) setTimeout(() => PV.toast(L(`${skipped} ảnh chỉ lưu trên máy này – đăng nhập để chia sẻ ảnh.`, `${skipped} photo(s) kept on this device only – sign in to share photos.`)), 1600);
     if (signedIn){   // account: pv_review_save (one review per account and place; sending again = edit)
       const out = await PV.rpc('pv_review_save', {p_kind: kind, p_target: target, p_stars: r.stars || 0, p_love: !!(r.fav || r.love), p_tags: (r.tags||[]).slice(0,10), p_body: (r.text||'').slice(0,800), p_photos: photos.map(p=>p.u).slice(0,MAXP)});
       if (fresh) setTimeout(() => PV.toast(L('📷 Ảnh mới sẽ hiện công khai sau khi nhóm duyệt (bạn vẫn thấy ảnh của mình).', '📷 New photos go public after the team approves them (you can still see yours).')), 1600);

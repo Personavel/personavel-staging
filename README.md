@@ -5,3 +5,6 @@ Bản đồ du lịch tự hướng dẫn cho TP. Hồ Chí Minh, do nhóm học
 Web gồm `index.html` (~0,8 MB) và thư mục `img/` (ảnh WebP, chỉ tải khi cần) (bản đồ, lịch trình thông minh, chatbot hướng dẫn, bộ sưu tập Sài Gòn, nhật ký ảnh).
 
 **Xem web:** https://personavel.github.io
+
+## Cùng làm dự án
+Mã nguồn nằm trong thư mục `src/`. Đọc `CLAUDE.md` để biết cấu trúc, cách build và quy tắc của nhóm.

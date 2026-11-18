@@ -77,7 +77,19 @@ Muốn đổi con số: sửa trong hàm `pv_upsert_review` (migration 004) và 
 - **CARTO Basemaps** – miễn phí cho dự án phi thương mại đến 75.000 lượt xem/tháng, chỉ cần ghi nguồn. Phù hợp nhất với Personavel (dự án học sinh). Không cần đăng ký.
 - **MapTiler** (100.000 lượt tải/tháng miễn phí) hoặc **Stadia Maps** (200.000 lượt/tháng cho phi thương mại) – cần tạo tài khoản và một khóa *public* giới hạn theo tên miền `personavel.github.io`. Dùng khi web có nhiều người truy cập hơn.
 
-## 4. Những phần chưa làm (Giai đoạn 3) – cần nhóm tự cài
-- **Đăng nhập Google:** Google Cloud Console → APIs & Services → Credentials → *Create OAuth client ID* (Web) → thêm *Authorized redirect URI* `https://bwtmunpzdxtutspdpphb.supabase.co/auth/v1/callback` → dán Client ID/Secret vào Supabase → Authentication → Providers → Google.
-- **SMTP riêng** (email đặt lại mật khẩu): Supabase → Authentication → Emails → SMTP Settings (ví dụ Resend, Brevo hoặc Gmail App Password).
+## 4. Giai đoạn 3 – tài khoản (đã cài ngày 18/11/2026)
+- **Đăng nhập Google:** đã xong. Google Cloud project `personavel`, OAuth client *Personavel Web* (origin `https://personavel.github.io`, redirect `https://bwtmunpzdxtutspdpphb.supabase.co/auth/v1/callback`). Supabase → Authentication → Providers → Google: **bật**. Site URL `https://personavel.github.io`, Redirect URLs `https://personavel.github.io/**`.
+  - App Google đang ở chế độ **Testing**: chỉ tài khoản trong *Audience → Test users* đăng nhập được. Khi ra mắt: *Publish app*.
+  - Trang thử nghiệm (staging) có tên miền khác → thêm vào Redirect URLs của Supabase và *Authorized JavaScript origins* của OAuth client, và vào `ORIGINS` trong `supabase/functions/delete-account/index.ts`.
+- **Migration 005** (`supabase/migrations/005_accounts.sql`): đã chạy. Bảng `profiles`, `user_data`, `posts`, `reports`, `mod_log`; cột `reviews.user_id`, `reviews.hidden_reason`; kho ảnh `avatars`. Hàm và lỗi: `docs/data-contract.md`. Kiểm thử: `supabase/tests/005_accounts_test.sql` (chạy trong SQL Editor, tự rollback; 24/24 đạt ngày 18/11/2026).
+- **Edge Function `delete-account`**: đã deploy (Dashboard → Edge Functions). Sửa code thì dán lại `supabase/functions/delete-account/index.ts` vào editor của Dashboard rồi *Deploy*.
+- **Gán quyền admin** (người đó phải đăng nhập web ít nhất 1 lần):
+  ```sql
+  update public.profiles set role = 'admin' where id = (select id from auth.users where email = '<email>');
+  ```
+- **Khu vực địa điểm:** `python3 src/tools/assign_area.py` → `data/areas.json` + `docs/areas.csv`. Các dòng có cột `can_soat = x` được gán theo điểm gần nhất – nhóm mở CSV trong Google Sheets, sửa cột `ward`, tải về CSV rồi chạy `python3 src/tools/assign_area.py --import docs/areas.csv`. Thêm địa điểm mới ở phường chưa có trong danh sách: thêm vào `WARDS` trong script.
+
+### Còn phải làm
+- **SMTP riêng** (email đặt lại mật khẩu, xác nhận email): Supabase → Authentication → Emails → SMTP Settings. Không có tên miền riêng → dùng Gmail App Password (`smtp.gmail.com`, cổng 465). Mẫu email tiếng Việt: Authentication → Emails → Templates.
+- **Migration 006 (sau khi giao diện tài khoản lên `main`):** chỉ người đã đăng nhập mới tải ảnh lên `review-photos` (hiện vẫn cho khách để web cũ chạy).
 - **Proxy AI cho chatbot:** cần khóa Anthropic API (có tính phí) đặt bằng `supabase secrets set ANTHROPIC_API_KEY=…`, không bao giờ đưa vào code.

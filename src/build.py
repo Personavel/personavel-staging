@@ -7,12 +7,13 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 P = lambda *a: os.path.join(HERE, *a)
 WEB = len(sys.argv) > 1 and sys.argv[1] == 'web'
 APP = ['app1.js', 'app2.js', 'i18n.js', 'app3.js', 'coll.js', 'theme.js', 'moments.js', 'community.js', 'reviews.js', 'visited.js',
-       'weather.js', 'tips.js', 'nlu.js', 'traffic.js', 'tripplus.js', 'nav.js', 'mapstyle.js', 'fun.js', 'gestures.js', 'appreview.js', 'ux.js', 'badges.js', 'guides.js', 'routes.js', 'app4.js']
+       'weather.js', 'tips.js', 'nlu.js', 'traffic.js', 'tripplus.js', 'nav.js', 'mapstyle.js', 'fun.js', 'gestures.js', 'appreview.js', 'ux.js', 'badges.js', 'guides.js', 'routes.js', 'cloud.js', 'account.js', 'app4.js']
 rd = lambda f: open(f, encoding='utf-8').read()
 FONTS = 'https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Dancing+Script:wght@600;700&family=Faustina:wght@400;600;700&display=swap&subset=vietnamese'
 TITLE = 'Personavel – Bản đồ du lịch tự túc TP.HCM'
 DESC = 'Personavel – nền tảng bản đồ du lịch tự túc, thuyết minh và gợi ý lịch trình cá nhân hóa tại TP.HCM. Dự án của nhóm 11A13, THPT Lê Quý Đôn.'
 SITE = 'https://personavel.github.io/'
+SUPABASE_JS = 'supabase-js-2.119.1.js'   # pinned; update the file name here when upgrading
 
 def minify(code, loader):
     try:
@@ -48,6 +49,9 @@ if not WEB:
 {rd(P('vendor', 'leaflet.js'))}
 {rd(P('vendor', 'leaflet.markercluster.js'))}
 </script>
+<script>
+{rd(P('vendor', SUPABASE_JS))}
+</script>
 </head>
 <body>
 <script>
@@ -81,6 +85,7 @@ data_js = emit('data', 'js', minify(rd(P('imgs_web.js')) + '\n' + rd(P('data.js'
 app_js = emit('app', 'js', minify('\n'.join(rd(P(f)) for f in APP), 'js'))
 lf_css = emit('leaflet', 'css', minify(rd(P('vendor', 'leaflet.css')) + '\n' + rd(P('vendor', 'MarkerCluster.css')), 'css'))
 lf_js = emit('leaflet', 'js', rd(P('vendor', 'leaflet.js')) + '\n' + rd(P('vendor', 'leaflet.markercluster.js')))
+sb_js = emit('supabase', 'js', rd(P('vendor', SUPABASE_JS)))   # loaded only when the visitor signs in (src/cloud.js)
 for f in ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'og.jpg']:
     if os.path.exists(P('static', f)): shutil.copy(P('static', f), os.path.join(A, f))
 
@@ -140,7 +145,7 @@ html = f'''<!DOCTYPE html>
 <body>
 {boot}
 <link rel="stylesheet" href="{app_css}">
-<script>window.PV_LEAFLET={{css:"{lf_css}",js:"{lf_js}"}};</script>
+<script>window.PV_LEAFLET={{css:"{lf_css}",js:"{lf_js}"}};window.PV_SUPABASE="{sb_js}";</script>
 <script defer src="{data_js}"></script>
 <script defer src="{app_js}"></script>
 <noscript><p style="padding:20px;font-family:sans-serif">Personavel cần bật JavaScript. · Personavel needs JavaScript enabled.</p></noscript>

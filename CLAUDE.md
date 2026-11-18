@@ -27,6 +27,8 @@ Bản đồ du lịch tự túc TP.HCM của nhóm 11A13, THPT Lê Quý Đôn. W
 | `src/ux.js` | robot tự ẩn khi cuộn, thẻ 3 bước cho người mới |
 | `src/badges.js` | lưới huy hiệu + popup chi tiết; mọi `PV.modal` đóng bằng Esc và giữ focus |
 | `src/routes.js` | tuyến đường thật OSRM (xe: router.project-osrm.org, đi bộ: routing.openstreetmap.de), từng chặng, lưu đệm IndexedDB 30 ngày |
+| `src/cloud.js` | tài khoản Supabase: nạp supabase-js khi cần, `PV.rpc` (lỗi `PV_*`, 401/42501 = `PV_AUTH`, hàm chưa có = ẩn tính năng), đồng bộ dữ liệu (debounce 3 s) |
+| `src/account.js` | hộp đăng nhập (Google, email), `#reset-password`, `#account`, avatar/tên từ `pv_me()` |
 | `src/guides.js` | phạm vi từng trợ lý (`PV.routeChat`), phiên chat riêng mỗi trợ lý – test: `node tests/chat-routing.test.js` |
 | `src/theme.js`, `style.css` | nền, màu chữ, giao diện |
 | `src/imgs*.js` | ảnh gốc (base64) – `gen_imgs.py` tạo `imgs_desk.js`, `imgs_web.js` và thư mục `img/` |
@@ -40,6 +42,7 @@ python3 src/build.py web --kill-sw   # CHỈ khi bản mới lỗi nặng: sw.js
 ```
 Nén code dùng `npx esbuild` (cần Node). Sau mỗi thay đổi: build cả hai, mở thử trên khung điện thoại (375px) cả Việt lẫn Anh, rồi commit `src/` **và** các file sinh ra (`index.html`, `assets/`, `sw.js`) cùng lúc. Checklist: `docs/checklist.md`. Trang thử nghiệm trước khi gộp vào `main`: `docs/staging.md`.
 `index.html` có sẵn màn đầu tiên tĩnh (`#boot`, ảnh `img/g0-480.webp`) – app4.js làm mờ nó khi app vẽ xong.
+Thư viện: `src/vendor/supabase-js-2.119.1.js` (ghim phiên bản, đổi tên ở `SUPABASE_JS` trong build.py khi nâng cấp).
 Thêm module JS mới: khai báo trong danh sách `APP` của `src/build.py` (trước `app4.js`). Không đặt tên biến `L` trong module – trùng với thư viện bản đồ Leaflet.
 
 ## Máy chủ

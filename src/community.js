@@ -73,6 +73,7 @@ PV.rvPhotos = {
     const el = $('#' + id, root); if (!el) return;
     hydrate(el);
     const inp = el.querySelector('input[type=file]');
+    if (inp) inp.addEventListener('click', (e) => { if (PV.cloud && !PV.cloud.user){ e.preventDefault(); PV.requireLogin(L('Đăng nhập để đăng ảnh kèm đánh giá.', 'Sign in to add photos to your review.')); } });
     if (inp) inp.onchange = async () => { const lbl = inp.closest('.rp-add'); lbl.classList.add('busy'); const next = await addFiles(inp.files, photos); onChange(next); };
     $$('.rp-del', el).forEach(b => b.onclick = (e) => { e.preventDefault(); const i = +b.dataset.i; const ph = photos[i]; if (ph && ph.k) PV.photoDB.del(ph.k); onChange(photos.filter((_,k)=>k!==i)); });
   },
@@ -193,7 +194,7 @@ PV.renderFeed = async (el, kind, target, opts={}) => {
     if (!res.rows.length && !rows.length){ list.outerHTML = `<div class="cf-empty small muted">${opts.empty || L('Chưa có ai đánh giá. Hãy là người đầu tiên!','No reviews yet. Be the first!')}</div>`; return; }
     res.rows.forEach(r => { rows.push(r); list.insertAdjacentHTML('beforeend', item(r, rows.length - 1, res.cloud)); const a = list.lastElementChild; PV.rvPhotos.bindGrid(a, r.photos, r.author); });
     shown = rows.length;
-    $$('[data-rep]', list).forEach(b => { if (b._b) return; b._b = 1; b.onclick = async () => { b.disabled = true; try { await PV.community.report(b.dataset.rep); b.textContent = L('Đã báo cáo – cảm ơn bạn','Reported – thank you'); } catch(e){ b.disabled = false; } }; });
+    $$('[data-rep]', list).forEach(b => { if (b._b) return; b._b = 1; b.onclick = async () => { if (PV.requireLogin && !PV.requireLogin(L('Đăng nhập để báo cáo nội dung không phù hợp.', 'Sign in to report inappropriate content.'))) return; b.disabled = true; try { await PV.community.report(b.dataset.rep); b.textContent = L('Đã báo cáo – cảm ơn bạn','Reported – thank you'); } catch(e){ b.disabled = false; } }; });
     const more = el.querySelector('.cf-more');
     more.innerHTML = shown < res.total ? `<button class="btn ghost sm" type="button">${L('Xem thêm','Show more')} (${res.total - shown})</button>` : '';
     const mb = more.querySelector('button'); if (mb) mb.onclick = async () => { mb.disabled = true; mb.textContent = L('Đang tải…','Loading…'); draw(await PV.community.list(kind, target, shown), true); };

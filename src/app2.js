@@ -77,7 +77,7 @@ PV.bindGallery = (root, auto=true) => { const G = window.PV_GALLERY || []; const
 
 PV.route = () => {
   PV.drawSideUser();
-  const k = (location.hash||'#home').slice(1) || 'home';
+  const k = ((location.hash||'#home').slice(1) || 'home').split('?')[0] || 'home';   // '#map?area=xuan-hoa' → map
   const v = PV.views[k] ? k : 'home';
   $$('.nav a, .bottom a').forEach(a => a.classList.toggle('on', a.dataset.k === v));
   PV.closeDrawer(); if (PV.chatPop) PV.chatPop(false);

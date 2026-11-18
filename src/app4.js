@@ -174,8 +174,8 @@ PV.tour = () => {
 
 /* ---------- init ---------- */
 /* first visit: ask which language to use before anything else */
-PV.langGate = (next) => {
-  if (state.settings.langChosen){ next(); return; }
+PV.langGate = (next, ask) => {
+  if (state.settings.langChosen && !ask){ next(); return; }   // ask=true: show the picker again (new visitor after logout)
   const g = PV.GUIDES[0];
   const ov = document.createElement('div'); ov.className = 'overlay langgate'; ov.id = 'langgate';
   ov.innerHTML = `${[[8,40,90,26],[22,70,140,34],[60,20,110,28],[75,82,160,40]].map(([t,dl,w,h],i)=>`<div class="cloud" style="top:${t}vh;width:${w}px;height:${h}px;animation-delay:-${dl/4}s;animation-duration:${26+i*6}s"></div>`).join('')}<div class="lg-card">
@@ -188,6 +188,7 @@ PV.langGate = (next) => {
       </div>
       <small class="lg-note">Bạn có thể đổi lại bất cứ lúc nào trong Cài đặt · You can change this anytime in Settings</small>
     </div>`;
+  if (state.settings.langChosen) ov.querySelector(`.lg-opt[data-l="${PV.lang}"]`)?.classList.add('cur');
   document.body.appendChild(ov);
   ov.querySelectorAll('.lg-opt').forEach(b => b.onclick = () => {
     state.settings.langChosen = true; PV.save('settings');
@@ -204,7 +205,7 @@ PV.init = () => {
   const p = state.profile;
   if (!p || !p.onboarded){ // brand-new visitor (never picked a language yet): default white–blue; returning users keep their theme
     if (!state.settings.langChosen && state.settings.theme && state.settings.theme.id !== 'default'){ state.settings.theme = {id:'default'}; PV.save('settings'); PV.applyTheme && PV.applyTheme({id:'default'}); }
-    PV.langGate(() => PV.welcome());
+    PV.langGate(() => PV.welcome(), true);
   }
   else PV.welcome(false);
   if ('speechSynthesis' in window) speechSynthesis.getVoices();

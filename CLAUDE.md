@@ -29,6 +29,7 @@ Bản đồ du lịch tự túc TP.HCM của nhóm 11A13, THPT Lê Quý Đôn. W
 | `src/routes.js` | tuyến đường thật OSRM (xe: router.project-osrm.org, đi bộ: routing.openstreetmap.de), từng chặng, lưu đệm IndexedDB 30 ngày |
 | `src/cloud.js` | tài khoản Supabase: nạp supabase-js khi cần, `PV.rpc` (lỗi `PV_*`, 401/42501 = `PV_AUTH`, hàm chưa có = ẩn tính năng), đồng bộ dữ liệu (debounce 3 s) |
 | `src/account.js` | hộp đăng nhập (Google, email), `#reset-password`, `#account`, avatar/tên từ `pv_me()` |
+| `src/content.js` | Nội dung của tôi (`pv_my_content`), sửa/xóa đánh giá và bài viết, bài viết ở trang địa điểm (`pv_list_posts`) |
 | `src/guides.js` | phạm vi từng trợ lý (`PV.routeChat`), phiên chat riêng mỗi trợ lý – test: `node tests/chat-routing.test.js` |
 | `src/theme.js`, `style.css` | nền, màu chữ, giao diện |
 | `src/imgs*.js` | ảnh gốc (base64) – `gen_imgs.py` tạo `imgs_desk.js`, `imgs_web.js` và thư mục `img/` |

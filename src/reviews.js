@@ -57,12 +57,12 @@ function bindBox(dr, id){
       try { const out = await PV.community.publish('place', id, r); if (out){ r.photos = out.photos; r.cloudId = out.id; r.cloudAt = Date.now(); PV.save('reviews'); } PV.toast(PV.L('Đã lưu và chia sẻ đánh giá 🌐','Review saved and shared 🌐')); }
       catch(e){ PV.toast(e.userMsg || PV.L('Đã lưu trên máy – chưa chia sẻ được (kiểm tra mạng)','Saved on this device – could not share (check your connection)')); }
     } else {
-      if (r.pub === false && r.cloudAt && PV.community.enabled()){ PV.community.remove('place', id).catch(()=>{}); delete r.cloudAt; PV.save('reviews'); }
+      if (r.pub === false && r.cloudAt && PV.community.enabled()){ PV.community.remove('place', id, r.cloudId).catch(()=>{}); delete r.cloudAt; PV.save('reviews'); }
       PV.toast(PV.L('Đã lưu nhận xét ✍️','Review saved ✍️'));
     }
     refresh(); const f = document.getElementById('rvFeed'); if (f) PV.renderFeed(f, 'place', id);
   };
-  const del = $('#rvDel', box); if (del) del.onclick = () => { if (!del.dataset.sure){ del.dataset.sure = 1; del.textContent = PV.L('Bấm lần nữa để xóa','Tap again to delete'); return; } const old = RV()[id]; (old?.photos||[]).forEach(p => p.k && PV.photoDB.del(p.k)); if (old?.cloudAt) PV.community.remove('place', id).catch(()=>{}); delete RV()[id]; PV.save('reviews'); refresh(); const f = document.getElementById('rvFeed'); if (f) PV.renderFeed(f, 'place', id); };
+  const del = $('#rvDel', box); if (del) del.onclick = () => { if (!del.dataset.sure){ del.dataset.sure = 1; del.textContent = PV.L('Bấm lần nữa để xóa','Tap again to delete'); return; } const old = RV()[id]; (old?.photos||[]).forEach(p => p.k && PV.photoDB.del(p.k)); if (old?.cloudAt) PV.community.remove('place', id, old.cloudId).catch(()=>{}); delete RV()[id]; PV.save('reviews'); refresh(); const f = document.getElementById('rvFeed'); if (f) PV.renderFeed(f, 'place', id); };
 }
 const _open = PV.openPlace;
 PV.openPlace = (id, opt) => {

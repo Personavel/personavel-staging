@@ -1646,3 +1646,27 @@ body.glass-dark .rt-legs button{background:rgba(255,255,255,.06);border-color:rg
 .tab-av{width:24px;height:24px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#2F6FA3;color:#fff;font:800 12px Nunito,system-ui,sans-serif;border:2px solid #fff;box-shadow:0 0 0 1px #BCD6EE}
 .tab-av img{width:100%;height:100%;object-fit:cover}
 body.glass-dark .acc-strip{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+
+/* ===== my content & posts ===== */
+.mc-f{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.mc-f button{border:1px solid #BCD6EE;background:#fff;border-radius:999px;padding:6px 12px;font:700 13px Nunito,system-ui,sans-serif;color:#1F4E79;cursor:pointer;min-height:36px}
+.mc-f button i{font-style:normal;opacity:.7;margin-left:2px}
+.mc-f button[aria-pressed="true"]{background:#2F6FA3;border-color:#2F6FA3;color:#fff}
+.mc-list{display:flex;flex-direction:column;gap:10px}
+.mc-item{border:1px solid #D6E6F4;border-radius:14px;padding:10px 12px;background:#fff}
+.mc-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mc-type{font-size:12px;font-weight:800;color:#3D7FB8}
+.st{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px}
+.st-public{background:#E8F5EE;color:#1E5E3D}.st-pending{background:#FFF4D6;color:#7A5300}.st-hidden{background:#FDECEC;color:#8A1F1F}
+.mc-title{display:block;margin-top:6px;color:#1F4E79}
+.mc-stars{color:#E8B730;letter-spacing:1px;font-size:14px}
+.mc-body{margin:4px 0;font-size:14px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.mc-ph{display:flex;gap:6px;margin-top:6px}.mc-ph img{width:56px;height:56px;object-fit:cover;border-radius:10px}
+.mc-act{display:flex;align-items:center;gap:6px;margin-top:8px}
+.po-item{padding:10px 0;border-top:1px solid var(--line)}
+.po-item:first-child{border-top:0}
+.po-title{display:block;margin-top:6px;color:#1F4E79}
+.po-body{margin:4px 0;font-size:14px;line-height:1.5;white-space:pre-line}
+.cf-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.po-bg .modal{width:min(560px,100%)}
+body.glass-dark .mc-item,body.glass-dark .mc-f button{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink-l)}

@@ -119,12 +119,19 @@ const colorOf = (s) => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch
 
 PV.community = {
   enabled: on,
+  upload,
   /* publish (create or update) my review; uploads local photos first and returns the photo list with public URLs */
   async publish(kind, target, r){
     if (!on()) return null;
-    const gate = checkPost(r);
+    const signedIn = !!(PV.cloud && PV.cloud.user);
+    const gate = signedIn ? (() => { if (PV.badText(r.text) || (r.tags||[]).some(PV.badText)) throw Object.assign(new Error('bad'), {userMsg: PV.errText('PV_BAD_WORDS')}); return {mark(){}}; })() : checkPost(r);
     const photos = []; let fresh = 0;
     for (const p of (r.photos || [])){ if (p.u) photos.push({k:p.k, u:p.u}); else { const d = await PV.photoDB.get(p.k); if (d){ photos.push({k:p.k, u: await upload(d)}); fresh++; } } }
+    if (signedIn){   // account: pv_review_save (one review per account and place; sending again = edit)
+      const out = await PV.rpc('pv_review_save', {p_kind: kind, p_target: target, p_stars: r.stars || 0, p_love: !!(r.fav || r.love), p_tags: (r.tags||[]).slice(0,10), p_body: (r.text||'').slice(0,800), p_photos: photos.map(p=>p.u).slice(0,MAXP)});
+      if (fresh) setTimeout(() => PV.toast(L('📷 Ảnh mới sẽ hiện công khai sau khi nhóm duyệt (bạn vẫn thấy ảnh của mình).', '📷 New photos go public after the team approves them (you can still see yours).')), 1600);
+      return {photos, id: out && out.id, status: out && out.status, account: true};
+    }
     const body = {p_token: token(), p_kind: kind, p_target: target, p_author: (state.profile?.name || L('Du khách','Traveller')).slice(0,40),
       p_stars: r.stars || 0, p_love: !!(r.fav || r.love), p_tags: (r.tags||[]).slice(0,10), p_body: (r.text||'').slice(0,800), p_photos: photos.map(p=>p.u).slice(0,MAXP), p_device: deviceId()};
     const res = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_upsert_review`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify(body)});
@@ -136,7 +143,13 @@ PV.community = {
     let id = null; try { id = await res.json(); } catch(e){}
     return {photos, id};
   },
-  async remove(kind, target){ if (!on()) return; await fetch(`${CLOUD.url}/rest/v1/rpc/pv_delete_review`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_token: token(), p_kind: kind, p_target: target})}); },
+  async remove(kind, target, id){ if (!on()) return;
+    if (PV.cloud && PV.cloud.user){
+      if (!id){ try { const mine = await PV.rpc('pv_my_content'); const it = (mine||[]).find(x => x.type === 'review' && x.kind === kind && x.target === target); id = it && it.id; } catch(e){} }
+      if (id){ try { await PV.rpc('pv_review_delete', {p_id: id}); } catch(e){ if (e.code !== 'PV_NOT_FOUND') throw e; } }
+      return;
+    }
+    await fetch(`${CLOUD.url}/rest/v1/rpc/pv_delete_review`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_token: token(), p_kind: kind, p_target: target})}); },
   async report(id){ if (!on()) return; await fetch(`${CLOUD.url}/rest/v1/rpc/pv_report_review`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_id: id})}); },
   /* everybody's reviews for a place ('place', id) or for the website ('site', 'personavel') */
   /* one page (10) of everybody's reviews for a place ('place', id) or for the website ('site', 'personavel') */

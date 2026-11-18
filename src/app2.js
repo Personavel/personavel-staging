@@ -59,14 +59,16 @@ PV.lightbox = (items, i=0) => {
   document.addEventListener('keydown', key);
   bg.addEventListener('click', e => { if (e.target.closest('.lb-prev')) go(-1); else if (e.target.closest('.lb-next')) go(1); else if (e.target===bg || e.target.closest('.lb-x')) close(); });
 };
+/* responsive sources for the city photos (img/gN.webp has -800 and -1200 versions on the web build) */
+PV.gset = (src) => /^img\/g\d+\.webp$/.test(src) ? ` srcset="${src.replace('.webp','-800.webp')} 800w, ${src.replace('.webp','-1200.webp')} 1200w, ${src} 1600w" sizes="100vw"` : '';
 PV.galleryHTML = (id='gal') => { const G = window.PV_GALLERY || []; if (!G.length) return '';
-  return `<div class="gallery" id="${id}"><div class="g-track">${G.map((g,i)=>`<figure class="g-slide ${i===0?'on':''}" data-i="${i}"><img src="${g.src}" alt="${esc(g.cap)}" loading="lazy"><figcaption>${esc(PV.lang==='en'?g.cap_en:g.cap)}</figcaption></figure>`).join('')}</div>
+  return `<div class="gallery" id="${id}"><div class="g-track">${G.map((g,i)=>`<figure class="g-slide ${i===0?'on':''}" data-i="${i}"><img src="${g.src}"${PV.gset(g.src)} alt="${esc(g.cap)}" loading="lazy" decoding="async"><figcaption>${esc(PV.lang==='en'?g.cap_en:g.cap)}</figcaption></figure>`).join('')}</div>
     <button class="g-prev" aria-label="Ảnh trước">‹</button><button class="g-next" aria-label="Ảnh sau">›</button>
     <div class="g-dots">${G.map((g,i)=>`<i class="${i===0?'on':''}" data-d="${i}"></i>`).join('')}</div></div>`; };
 PV.bindGallery = (root, auto=true) => { const G = window.PV_GALLERY || []; const el = root && root.querySelector('.gallery'); if (!el) return ()=>{};
   let i = 0, timer = null;
   const show = n => { i = (n + G.length) % G.length; el.querySelectorAll('.g-slide').forEach((s,k)=>s.classList.toggle('on', k===i)); el.querySelectorAll('.g-dots i').forEach((s,k)=>s.classList.toggle('on', k===i)); };
-  const restart = () => { clearInterval(timer); if (auto && !document.body.classList.contains('reduce')) timer = setInterval(()=>{ if (!document.body.contains(el)) return clearInterval(timer); show(i+1); }, 3500); };
+  const restart = () => { clearInterval(timer); if (auto && !document.body.classList.contains('reduce')) timer = setInterval(()=>{ if (!document.body.contains(el)) return clearInterval(timer); if (document.hidden) return; show(i+1); }, 3500); };
   el.querySelector('.g-prev').onclick = (e) => { e.stopPropagation(); show(i-1); restart(); };
   el.querySelector('.g-next').onclick = (e) => { e.stopPropagation(); show(i+1); restart(); };
   el.querySelectorAll('.g-dots i').forEach(d => d.onclick = (e) => { e.stopPropagation(); show(+d.dataset.d); restart(); });
@@ -94,7 +96,7 @@ function heroBg(){
   const G = window.PV_GALLERY || []; if (!G.length) return '';
   PV.heroIdx = (PV.heroIdx + 1) % G.length; PV.store.set('heroIdx', PV.heroIdx);
   const g = G[PV.heroIdx];
-  return `<div class="hero-bg" aria-hidden="true"><img class="on" src="${g.src}" alt=""><img alt=""></div><div class="hero-shade"></div>
+  return `<div class="hero-bg" aria-hidden="true"><img class="on" src="${g.src}"${PV.gset(g.src)} alt="" fetchpriority="high"><img alt=""></div><div class="hero-shade"></div>
     <button class="hero-cap" title="Xem ảnh lớn">📍 ${esc(PV.lang==='en'?g.cap_en:g.cap)}<span class="hero-credit">${g.credit?' · Ảnh: '+esc(g.credit):''}</span></button>`;
 }
 let heroTimer = null;
@@ -105,11 +107,13 @@ function bindHero(m){
   const show = (i) => {
     const g = G[i], back = 1 - front, im = imgs[back];
     im.onload = () => { imgs[front].classList.remove('on'); im.classList.add('on'); front = back; };
+    if (/^img\/g\d+\.webp$/.test(g.src)){ im.srcset = `${g.src.replace('.webp','-800.webp')} 800w, ${g.src.replace('.webp','-1200.webp')} 1200w, ${g.src} 1600w`; im.sizes = '100vw'; } else im.removeAttribute('srcset');
+    if (!PV._heroFirst){ PV._heroFirst = 1; im.fetchPriority = 'high'; im.loading = 'eager'; }
     im.src = g.src; cap.innerHTML = '📍 ' + esc(PV.lang==='en' ? g.cap_en : g.cap) + (g.credit ? '<span class="hero-credit"> · Ảnh: ' + esc(g.credit) + '</span>' : '');
   };
   cap.onclick = () => PV.lightbox(G.map(g=>({src:g.src, cap:(PV.lang==='en'?g.cap_en:g.cap)+(g.credit?' — Ảnh: '+g.credit+' (Wikimedia Commons)':'')})), PV.heroIdx);
   clearInterval(heroTimer);
-  heroTimer = setInterval(() => {
+  heroTimer = setInterval(() => { if (document.hidden) return;   // paused while the tab is hidden
     if (!document.body.contains(hero)) { clearInterval(heroTimer); return; }
     PV.heroIdx = (PV.heroIdx + 1) % G.length; PV.store.set('heroIdx', PV.heroIdx); show(PV.heroIdx);
   }, 60000);
@@ -285,7 +289,9 @@ PV.views.map = (m) => {
         <button class="btn sm ghost" id="showtrip">${ICON.trip.replace('<svg','<svg width=18 height=18')} Lịch trình</button>
       </div></div>
   </div>`;
-  if (!window.L){ $('#map').innerHTML = '<div class="empty">Không tải được thư viện bản đồ. Hãy kiểm tra kết nối Internet.</div>'; return; }
+  if (!window.L){ $('#map').innerHTML = `<div class="empty">${PV.L('Đang tải bản đồ…','Loading the map…')}</div>`;
+    PV.loadLeaflet().then(() => { if (location.hash === '#map') PV.route(); }).catch(() => { const e = $('#map'); if (e) e.innerHTML = `<div class="empty">${PV.L('Không tải được thư viện bản đồ. Hãy kiểm tra kết nối Internet.','Could not load the map library. Please check your connection.')}</div>`; });
+    return; }
   const mv = PV._mapView; map = L.map('map', {zoomControl:true}).setView(mv ? mv.c : [10.7795, 106.6935], mv ? mv.z : 15); PV._mapRef = map;
   map.on('moveend', () => { try { const c=map.getCenter(); PV._mapView = {c:[c.lat,c.lng], z:map.getZoom()}; } catch(e){} });
   PV.baseLayer(map);
@@ -468,6 +474,7 @@ PV.views.trip = (m) => {
   const tch = $('#tchat'); if (tch) tch.onclick = () => { PV.pendingAsk = 'Gợi ý cho mình lịch trình khám phá Sài Gòn trong một ngày phù hợp với phong cách của mình'; location.hash='#chat'; };
   const sv = $('#tsave'); if (sv) sv.onclick = () => PV.saveDiary();
   const cl = $('#tclear'); if (cl) cl.onclick = () => { t.stops=[]; upd(); };
+  if (!window.L && t.stops.length) PV.loadLeaflet().then(() => { if (location.hash === '#trip') PV.route(); }).catch(()=>{});
   if (window.L){
     tmap = L.map('tripmap').setView([10.7795,106.6935], 14);
     PV.baseLayer(tmap);

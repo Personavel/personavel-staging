@@ -22,7 +22,7 @@ const token = () => {
 const hdr = (extra={}) => ({apikey: CLOUD.key, Authorization: 'Bearer ' + CLOUD.key, ...extra});
 
 /* ---------- photos ---------- */
-const MAXP = 4;
+const MAXP = 4, PAGE = 10;
 function shrink(file, max = 1080){
   return new Promise((res) => {
     const url = URL.createObjectURL(file), im = new Image();
@@ -130,13 +130,16 @@ PV.community = {
   async remove(kind, target){ if (!on()) return; await fetch(`${CLOUD.url}/rest/v1/rpc/pv_delete_review`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_token: token(), p_kind: kind, p_target: target})}); },
   async report(id){ if (!on()) return; await fetch(`${CLOUD.url}/rest/v1/rpc/pv_report_review`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_id: id})}); },
   /* everybody's reviews for a place ('place', id) or for the website ('site', 'personavel') */
-  async list(kind, target){
+  /* one page (10) of everybody's reviews for a place ('place', id) or for the website ('site', 'personavel') */
+  async list(kind, target, offset = 0){
     if (on()){
       try {
-        const r = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_list_reviews`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_kind: kind, p_target: target})});
+        const r = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_list_reviews_page`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_kind: kind, p_target: target, p_limit: PAGE, p_offset: offset})});
         if (r.ok){ const rows = await r.json();
           const mineIds = new Set([...Object.values(state.reviews||{}).map(v=>v&&v.cloudId), state.appReview && state.appReview.cloudId].filter(Boolean));
-          return {cloud:true, rows: rows.map(x => ({id:x.id, author:x.author, stars:x.stars, love:x.love, tags:x.tags||[], text:x.body||'', photos:(x.photos||[]).filter(u=>PV.safeImg(u)).map(u=>({u})), at:new Date(x.updated_at).toLocaleDateString('vi-VN'), mine: mineIds.has(x.id)}))}; }
+          const f = rows[0] || {};
+          return {cloud:true, total: +f.total || 0, avg: +f.avg_stars || 0, loves: +f.loves || 0,
+            rows: rows.map(x => ({id:x.id, author:x.author, stars:x.stars, love:x.love, tags:x.tags||[], text:x.body||'', photos:(x.photos||[]).filter(u=>PV.safeImg(u)).map(u=>({u})), at:new Date(x.updated_at).toLocaleDateString('vi-VN'), mine: mineIds.has(x.id)}))}; }
       } catch(e){ /* fall back to this device */ }
     }
     // this device: current profile + every saved profile
@@ -146,34 +149,52 @@ PV.community = {
     add(cur || L('Bạn','You'), kind === 'site' ? state.appReview : state.reviews, true);
     const accs = PV.accounts ? PV.accounts() : {};
     Object.values(accs).forEach(a => { if (!a || !a.data || a.name === cur) return; add(a.name, kind === 'site' ? a.data.appReview : a.data.reviews, false); });
-    return {cloud:false, rows};
+    const rated = rows.filter(r => r.stars);
+    return {cloud:false, rows: rows.slice(offset, offset + PAGE), total: rows.length, avg: rated.length ? rated.reduce((a,r)=>a+r.stars,0)/rated.length : 0, loves: rows.filter(r=>r.love).length};
   },
   colorOf
 };
 
 /* ---------- community feed UI ---------- */
 const stars = n => `<span class="rv-stars" aria-label="${n}/5">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}">★</i>`).join('')}</span>`;
+const item = (r, i, cloud) => `<article class="cf-item${r.mine?' mine':''}" data-i="${i}">
+    <div class="cf-top"><span class="cf-av" style="background:${colorOf(r.author)}">${esc((r.author||'?')[0].toUpperCase())}</span>
+      <div class="cf-who"><b>${esc(r.author)}${r.mine?` <span class="cf-me">${L('bạn','you')}</span>`:''}</b><span class="tiny muted">${esc(r.at||'')}</span></div>
+      <span class="spacer"></span>${r.stars?stars(r.stars):''}${r.love?`<span class="cf-love" title="${L('Yêu thích','Loved')}">❤</span>`:''}</div>
+    ${r.tags&&r.tags.length?`<div class="rv-tagline">${r.tags.slice(0,6).map(t=>`<span>${esc(PV.tr?PV.tr(t):t)}</span>`).join('')}</div>`:''}
+    ${r.text?`<p class="cf-text">${esc(r.text)}</p>`:''}
+    ${PV.rvPhotos.grid(r.photos)}
+    ${cloud && !r.mine && r.id ? `<button class="cf-report tiny" data-rep="${esc(r.id)}">⚑ ${L('Báo cáo','Report')}</button>` : ''}
+  </article>`;
+/* stale-while-revalidate: show the last copy at once, then refresh from the server */
+const cacheKey = (k, t) => 'cf:' + k + ':' + t;
 PV.renderFeed = async (el, kind, target, opts={}) => {
   if (!el) return;
-  el.innerHTML = `<div class="cf-head"><b>${opts.title || L('💬 Đánh giá từ cộng đồng','💬 Community reviews')}</b></div><div class="cf-load tiny muted">${L('Đang tải…','Loading…')}</div>`;
-  const {cloud, rows} = await PV.community.list(kind, target);
-  if (!document.body.contains(el)) return;
-  const rated = rows.filter(r => r.stars); const avg = rated.length ? rated.reduce((s,r)=>s+r.stars,0)/rated.length : 0;
-  const loves = rows.filter(r => r.love).length;
-  el.innerHTML = `<div class="cf-head"><b>${opts.title || L('💬 Đánh giá từ cộng đồng','💬 Community reviews')}</b><span class="spacer"></span>
-      ${avg ? `<span class="cf-avg"><b>★ ${avg.toFixed(1)}</b><span class="tiny muted"> · ${rated.length} ${L('lượt','ratings')}${loves?` · ❤ ${loves}`:''}</span></span>` : ''}</div>
-    ${!cloud ? `<div class="cf-note tiny">🔒 ${L('Đang hiển thị đánh giá của các tài khoản trên máy này. Khi web kết nối máy chủ, đánh giá sẽ công khai cho mọi người.','Showing reviews from profiles on this device. Once the site is connected to its server, reviews are public to everyone.')}</div>` : ''}
-    ${rows.length ? `<div class="cf-list">${rows.map((r,i) => `<article class="cf-item${r.mine?' mine':''}" data-i="${i}">
-        <div class="cf-top"><span class="cf-av" style="background:${colorOf(r.author)}">${esc((r.author||'?')[0].toUpperCase())}</span>
-          <div class="cf-who"><b>${esc(r.author)}${r.mine?` <span class="cf-me">${L('bạn','you')}</span>`:''}</b><span class="tiny muted">${esc(r.at||'')}</span></div>
-          <span class="spacer"></span>${r.stars?stars(r.stars):''}${r.love?'<span class="cf-love" title="Yêu thích">❤</span>':''}</div>
-        ${r.tags&&r.tags.length?`<div class="rv-tagline">${r.tags.slice(0,6).map(t=>`<span>${esc(PV.tr?PV.tr(t):t)}</span>`).join('')}</div>`:''}
-        ${r.text?`<p class="cf-text">${esc(r.text)}</p>`:''}
-        ${PV.rvPhotos.grid(r.photos)}
-        ${cloud && !r.mine && r.id ? `<button class="cf-report tiny" data-rep="${esc(r.id)}">⚑ ${L('Báo cáo','Report')}</button>` : ''}
-      </article>`).join('')}</div>`
-      : `<div class="cf-empty small muted">${opts.empty || L('Chưa có ai đánh giá. Hãy là người đầu tiên!','No reviews yet. Be the first!')}</div>`}`;
-  $$('.cf-item', el).forEach(a => { const r = rows[+a.dataset.i]; PV.rvPhotos.bindGrid(a, r.photos, r.author); });
-  $$('[data-rep]', el).forEach(b => b.onclick = async () => { b.disabled = true; try { await PV.community.report(b.dataset.rep); b.textContent = L('Đã báo cáo – cảm ơn bạn','Reported – thank you'); } catch(e){ b.disabled = false; } });
+  const title = opts.title || L('💬 Đánh giá từ cộng đồng','💬 Community reviews');
+  let rows = [], shown = 0;
+  const draw = (res, append) => {
+    if (!document.body.contains(el)) return;
+    if (!append){
+      el.innerHTML = `<div class="cf-head"><b>${title}</b><span class="spacer"></span>
+          ${res.avg ? `<span class="cf-avg"><b>★ ${(+res.avg).toFixed(1)}</b><span class="tiny muted"> · ${res.total} ${L('đánh giá','reviews')}${res.loves?` · ❤ ${res.loves}`:''}</span></span>` : (res.total ? `<span class="tiny muted">${res.total} ${L('đánh giá','reviews')}</span>` : '')}</div>
+        ${!res.cloud ? `<div class="cf-note tiny">🔒 ${L('Chưa kết nối được máy chủ – đang hiện đánh giá của các tài khoản trên máy này.','Cannot reach the server – showing reviews from profiles on this device.')}</div>` : ''}
+        <div class="cf-list"></div><div class="cf-more"></div>`;
+      rows = []; shown = 0;
+    }
+    const list = el.querySelector('.cf-list');
+    if (!res.rows.length && !rows.length){ list.outerHTML = `<div class="cf-empty small muted">${opts.empty || L('Chưa có ai đánh giá. Hãy là người đầu tiên!','No reviews yet. Be the first!')}</div>`; return; }
+    res.rows.forEach(r => { rows.push(r); list.insertAdjacentHTML('beforeend', item(r, rows.length - 1, res.cloud)); const a = list.lastElementChild; PV.rvPhotos.bindGrid(a, r.photos, r.author); });
+    shown = rows.length;
+    $$('[data-rep]', list).forEach(b => { if (b._b) return; b._b = 1; b.onclick = async () => { b.disabled = true; try { await PV.community.report(b.dataset.rep); b.textContent = L('Đã báo cáo – cảm ơn bạn','Reported – thank you'); } catch(e){ b.disabled = false; } }; });
+    const more = el.querySelector('.cf-more');
+    more.innerHTML = shown < res.total ? `<button class="btn ghost sm" type="button">${L('Xem thêm','Show more')} (${res.total - shown})</button>` : '';
+    const mb = more.querySelector('button'); if (mb) mb.onclick = async () => { mb.disabled = true; mb.textContent = L('Đang tải…','Loading…'); draw(await PV.community.list(kind, target, shown), true); };
+  };
+  let cached = null; try { cached = PV.store.get(cacheKey(kind, target), null); } catch(e){}
+  if (cached && cached.rows) draw(cached);
+  else el.innerHTML = `<div class="cf-head"><b>${title}</b></div><div class="cf-load tiny muted">${L('Đang tải…','Loading…')}</div>`;
+  const fresh = await PV.community.list(kind, target, 0);
+  if (fresh.cloud) PV.store.set(cacheKey(kind, target), {...fresh, at: Date.now()});
+  if (!cached || JSON.stringify(cached.rows) !== JSON.stringify(fresh.rows) || cached.total !== fresh.total) draw(fresh);
 };
 })();

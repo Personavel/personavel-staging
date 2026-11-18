@@ -197,6 +197,7 @@ PV.langGate = (next) => {
   });
 };
 PV.init = () => {
+  const boot = document.getElementById('boot'); if (boot) setTimeout(() => boot.remove(), 0);   // first-paint placeholder from index.html
   if (state.settings.apiKey || state.settings.model){ delete state.settings.apiKey; delete state.settings.model; PV.save('settings'); }   // never keep API keys in the browser
   document.body.classList.toggle('reduce', !!state.settings.reduce);
   PV.shell();

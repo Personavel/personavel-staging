@@ -19,6 +19,18 @@ PV.store = {
   del(k){ delete mem[k]; try{ localStorage.removeItem('pv_'+k); }catch(e){} }
 };
 const S = PV.store;
+/* Leaflet is only downloaded when a map is needed (web build); the offline single file has it built in */
+let leafletP = null;
+PV.loadLeaflet = () => {
+  if (window.L) return Promise.resolve(window.L);
+  const src = window.PV_LEAFLET; if (!src) return Promise.reject(new Error('no leaflet'));
+  return leafletP = leafletP || new Promise((ok, fail) => {
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = src.css; document.head.appendChild(css);
+    const js = document.createElement('script'); js.src = src.js; js.async = true;
+    js.onload = () => ok(window.L); js.onerror = () => { leafletP = null; fail(new Error('leaflet load failed')); };
+    document.head.appendChild(js);
+  });
+};
 PV.state = {
   profile: S.get('profile', null),       // {name, avatar, joined, prefs, persona}
   trip: S.get('trip', {title:'Hành trình của tôi', start:'08:00', mode:'moto', stops:[]}),

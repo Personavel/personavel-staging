@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://personavel.github.io/sitemap.xml

@@ -55,7 +55,7 @@ function bindBox(dr, id){
     if (r.pub !== false && PV.community.enabled()){
       btn.disabled = true; btn.textContent = PV.L('Đang chia sẻ…','Sharing…');
       try { const out = await PV.community.publish('place', id, r); if (out){ r.photos = out.photos; r.cloudId = out.id; r.cloudAt = Date.now(); PV.save('reviews'); } PV.toast(PV.L('Đã lưu và chia sẻ đánh giá 🌐','Review saved and shared 🌐')); }
-      catch(e){ PV.toast(PV.L('Đã lưu trên máy – chưa chia sẻ được (kiểm tra mạng)','Saved on this device – could not share (check your connection)')); }
+      catch(e){ PV.toast(e.userMsg || PV.L('Đã lưu trên máy – chưa chia sẻ được (kiểm tra mạng)','Saved on this device – could not share (check your connection)')); }
     } else {
       if (r.pub === false && r.cloudAt && PV.community.enabled()){ PV.community.remove('place', id).catch(()=>{}); delete r.cloudAt; PV.save('reviews'); }
       PV.toast(PV.L('Đã lưu nhận xét ✍️','Review saved ✍️'));

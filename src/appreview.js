@@ -46,7 +46,7 @@ function bind(card){
     if (get().pub !== false && PV.community.enabled()){
       btn.disabled = true; btn.textContent = PV.L('Đang gửi…','Sending…');
       try { const out = await PV.community.publish('site', 'personavel', get()); if (out) save({photos: out.photos, cloudId: out.id, cloudAt: Date.now()}); }
-      catch(e){ PV.toast(PV.L('Đã lưu trên máy – chưa gửi lên được (kiểm tra mạng)','Saved on this device – could not send (check your connection)')); }
+      catch(e){ PV.toast(e.userMsg || PV.L('Đã lưu trên máy – chưa gửi lên được (kiểm tra mạng)','Saved on this device – could not send (check your connection)')); }
     } else if (get().pub === false && get().cloudAt && PV.community.enabled()){ PV.community.remove('site','personavel').catch(()=>{}); save({cloudAt: null}); }
     redraw(); thanks(card);
     const f = document.getElementById('arFeed'); if (f) PV.renderFeed(f, 'site', 'personavel', {title: PV.L('🌟 Mọi người nói gì về Personavel','🌟 What people say about Personavel')});

@@ -5,7 +5,11 @@ const D = window.PV_DATA;
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const PV = window.PV = {D, $, $$, esc};
+/* only allow image sources we create ourselves (photos read on this device, our own files) or https images */
+const safeImg = u => { u = String(u || ''); return /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(u) || /^https:\/\/[^\s"'<>]+$/.test(u) || /^img\/[\w\/.-]+$/.test(u) ? u : ''; };
+/* links: http(s), tel and mailto only – never javascript: */
+const safeUrl = u => { u = String(u || '').trim(); return /^(https?:|tel:|mailto:)/i.test(u) ? u : '#'; };
+const PV = window.PV = {D, $, $$, esc, safeImg, safeUrl};
 
 /* ---------- storage (localStorage, fallback to memory) ---------- */
 const mem = {};
@@ -15,6 +19,18 @@ PV.store = {
   del(k){ delete mem[k]; try{ localStorage.removeItem('pv_'+k); }catch(e){} }
 };
 const S = PV.store;
+/* Leaflet is only downloaded when a map is needed (web build); the offline single file has it built in */
+let leafletP = null;
+PV.loadLeaflet = () => {
+  if (window.L) return Promise.resolve(window.L);
+  const src = window.PV_LEAFLET; if (!src) return Promise.reject(new Error('no leaflet'));
+  return leafletP = leafletP || new Promise((ok, fail) => {
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = src.css; document.head.appendChild(css);
+    const js = document.createElement('script'); js.src = src.js; js.async = true;
+    js.onload = () => ok(window.L); js.onerror = () => { leafletP = null; fail(new Error('leaflet load failed')); };
+    document.head.appendChild(js);
+  });
+};
 PV.state = {
   profile: S.get('profile', null),       // {name, avatar, joined, prefs, persona}
   trip: S.get('trip', {title:'Hành trình của tôi', start:'08:00', mode:'moto', stops:[]}),
@@ -23,7 +39,7 @@ PV.state = {
   readStreets: S.get('readStreets', {}),
   listened: S.get('listened', 0),
   points: S.get('points', 0),
-  settings: S.get('settings', {reduce:false, apiKey:'', model:'claude-sonnet-5-5', guide:null}),
+  settings: S.get('settings', {reduce:false, guide:null}),
   chat: S.get('chat', []),
   history: S.get('history', [])           // recently viewed place ids
 };

@@ -170,7 +170,7 @@ async function next(){
 function startSim(){
   stopSim(); let along = 0;
   const v = (N.t.mode === 'walk' ? 1.4 * 8 : 9 * 5);       // sped-up metres per tick
-  N.simT = setInterval(() => {
+  N.simT = setInterval(() => { if (document.hidden) return;
     if (!N || N.arrived) return stopSim();
     along += v; const c = N.cum, co = N.coords; let i = c.findIndex(x => x >= along);
     if (i < 0){ update(N.dest.coords, 5); return; }
@@ -209,6 +209,7 @@ async function start(t, sim){
         <a class="nbtn" id="navLive" target="_blank" rel="noopener" aria-label="${T_('Giao thông trực tiếp','Live traffic')}">🚦</a><button class="nbtn end" id="navEnd">${T_('Kết thúc','End')}</button></div></div>`;
   document.body.appendChild(ui); document.body.classList.add('nav-on');
   N = {t, idx: 0, sim, follow: true, spoken: {}};
+  try { await PV.loadLeaflet(); } catch(e){ PV.toast(T_('Không tải được bản đồ – kiểm tra kết nối Internet','Could not load the map – check your connection')); PV.navStop(); return; }
   N.map = L.map('navMap', {zoomControl: false}).setView([10.776, 106.70], 16); PV.baseLayer(N.map);
   N.map.on('dragstart', () => { N.follow = false; });
   $('#navMute').onclick = () => { muted = !muted; $('#navMute').textContent = muted ? '🔇' : '🔊'; if (muted) speechSynthesis.cancel(); };

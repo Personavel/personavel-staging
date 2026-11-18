@@ -2,7 +2,7 @@
    python3 src/build.py        -> dist/personavel.html  (one self-contained file for offline use, images inline)
    python3 src/build.py web    -> index.html + assets/ + sw.js (GitHub Pages: minified, cached, Leaflet loaded on demand)
    Minifying uses esbuild through npx (needs Node); if it is not available the files are written unminified."""
-import os, sys, json, hashlib, subprocess, shutil, glob, datetime
+import os, sys, json, hashlib, subprocess, shutil, glob, datetime, base64
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 P = lambda *a: os.path.join(HERE, *a)
 WEB = len(sys.argv) > 1 and sys.argv[1] == 'web'
@@ -25,13 +25,15 @@ def minify(code, loader):
     except Exception as e: print('esbuild unavailable:', e)
     return code
 
+ICON_V = hashlib.sha256(b''.join(open(os.path.join(HERE, 'static', f), 'rb').read() for f in ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-48.png'])).hexdigest()[:8]
+FAVICON_DATA = 'data:image/png;base64,' + base64.b64encode(open(os.path.join(HERE, 'static', 'favicon-48.png'), 'rb').read()).decode()
 def head(extra=''):
     return f'''<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{TITLE}</title>
 <meta name="description" content="{DESC}">
 <meta name="theme-color" content="#3D7FB8">
-<link rel="icon" href="{'assets/icon-192.png' if WEB else ''}" type="image/png">
+<link rel="icon" href="{('assets/favicon-48.png?v=' + ICON_V) if WEB else FAVICON_DATA}" type="image/png" sizes="48x48">
 {extra}<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="{FONTS}" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="{FONTS}" rel="stylesheet"></noscript>'''
 
@@ -42,7 +44,7 @@ if not WEB:
     html = f'''<!DOCTYPE html>
 <html lang="vi">
 <head>
-{head().replace('<link rel="icon" href="" type="image/png">', '')}
+{head()}
 <style>
 {minify(css, 'css')}
 </style>
@@ -88,13 +90,13 @@ app_js = emit('app', 'js', minify('\n'.join(rd(P(f)) for f in APP), 'js'))
 lf_css = emit('leaflet', 'css', minify(rd(P('vendor', 'leaflet.css')) + '\n' + rd(P('vendor', 'MarkerCluster.css')), 'css'))
 lf_js = emit('leaflet', 'js', rd(P('vendor', 'leaflet.js')) + '\n' + rd(P('vendor', 'leaflet.markercluster.js')))
 sb_js = emit('supabase', 'js', rd(P('vendor', SUPABASE_JS)))   # loaded only when the visitor signs in (src/cloud.js)
-for f in ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'og.jpg']:
+for f in ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-48.png', 'og.jpg']:
     if os.path.exists(P('static', f)): shutil.copy(P('static', f), os.path.join(A, f))
 
 ng = rd(P('imgs_web.js')).count('img/g')
 seo = f'''<link rel="canonical" href="{SITE}">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v={ICON_V}">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Personavel">
 <meta property="og:title" content="{TITLE}"><meta property="og:description" content="{DESC}">
 <meta property="og:url" content="{SITE}"><meta property="og:image" content="{SITE}assets/og.jpg"><meta property="og:locale" content="vi_VN"><meta property="og:locale:alternate" content="en_US">
@@ -160,12 +162,12 @@ open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8').write(html)
 # PWA: manifest + service worker (precache the app shell; images cached when first seen)
 json.dump({"name": "Personavel – Bản đồ du lịch tự túc TP.HCM", "short_name": "Personavel", "lang": "vi", "start_url": "./#home", "scope": "./",
            "display": "standalone", "background_color": "#F4F9FE", "theme_color": "#3D7FB8", "description": DESC,
-           "icons": [{"src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png"},
-                     {"src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png"},
-                     {"src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]},
+           "icons": [{"src": f"assets/icon-192.png?v={ICON_V}", "sizes": "192x192", "type": "image/png"},
+                     {"src": f"assets/icon-512.png?v={ICON_V}", "sizes": "512x512", "type": "image/png"},
+                     {"src": f"assets/icon-maskable-512.png?v={ICON_V}", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]},
           open(os.path.join(ROOT, 'manifest.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-ver = hashlib.sha256((app_js + app_css + data_js + lf_js + (rd(AREAS_JSON) if os.path.exists(AREAS_JSON) else '')).encode()).hexdigest()[:10]
-shell = ['./', 'index.html', app_css, data_js, app_js, lf_css, lf_js, 'manifest.json', 'assets/icon-192.png'] + (['data/areas.json'] if os.path.exists(AREAS_JSON) else [])
+ver = hashlib.sha256((app_js + app_css + data_js + lf_js + (rd(AREAS_JSON) if os.path.exists(AREAS_JSON) else '') + ICON_V).encode()).hexdigest()[:10]
+shell = ['./', 'index.html', app_css, data_js, app_js, lf_css, lf_js, 'manifest.json', f'assets/icon-192.png?v={ICON_V}', f'assets/favicon-48.png?v={ICON_V}'] + (['data/areas.json'] if os.path.exists(AREAS_JSON) else [])
 KILL = '--kill-sw' in sys.argv
 if KILL:
     # emergency: a service worker that deletes every cache, unregisters itself and reloads open tabs from the network

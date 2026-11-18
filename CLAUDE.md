@@ -24,19 +24,21 @@ Bản đồ du lịch tự túc TP.HCM của nhóm 11A13, THPT Lê Quý Đôn. W
 | `src/traffic.js` | giờ cao điểm, phố cấm xe, thi công, điểm hay chèo kéo (**cập nhật khi có thông báo phân luồng mới**) |
 | `src/community.js`, `reviews.js`, `appreview.js` | đánh giá có ảnh, công khai qua Supabase |
 | `src/visited.js` | danh sách địa điểm đã đi |
+| `src/ux.js` | robot tự ẩn khi cuộn, thẻ 3 bước cho người mới |
 | `src/theme.js`, `style.css` | nền, màu chữ, giao diện |
 | `src/imgs*.js` | ảnh gốc (base64) – `gen_imgs.py` tạo `imgs_desk.js`, `imgs_web.js` và thư mục `img/` |
 
 ## Build
 ```bash
-python3 src/build.py web   # tạo index.html cho GitHub Pages (ảnh lấy từ img/)
-python3 src/build.py       # tạo dist/personavel.html – 1 file chạy offline, ảnh nhúng sẵn
+python3 src/build.py web   # index.html + assets/ (JS/CSS nén, có mã băm) + sw.js + manifest.json + sitemap.xml
+python3 src/build.py       # dist/personavel.html – 1 file chạy offline, ảnh nhúng sẵn
 python3 src/gen_imgs.py    # chỉ chạy khi thêm/đổi ảnh (cần Pillow)
 ```
-Sau mỗi thay đổi: build cả hai, mở thử trên khung điện thoại (390px), rồi commit `src/` **và** `index.html` cùng lúc.
+Nén code dùng `npx esbuild` (cần Node). Sau mỗi thay đổi: build cả hai, mở thử trên khung điện thoại (375px) cả Việt lẫn Anh, rồi commit `src/` **và** các file sinh ra (`index.html`, `assets/`, `sw.js`) cùng lúc. Checklist: `docs/checklist.md`.
+Thêm module JS mới: khai báo trong danh sách `APP` của `src/build.py` (trước `app4.js`). Không đặt tên biến `L` trong module – trùng với thư viện bản đồ Leaflet.
 
 ## Máy chủ
-- Supabase project **Personavel** (`bwtmunpzdxtutspdpphb`) – bảng `reviews` + kho ảnh `review-photos`. Cấu trúc ở `supabase/schema.sql`.
+- Supabase project **Personavel** (`bwtmunpzdxtutspdpphb`) – bảng `reviews` + kho ảnh `review-photos`. Cấu trúc ở `supabase/migrations/` (xem `docs/setup.md`).
   Khóa trong `src/community.js` là khóa công khai (anon) – không đưa khóa `service_role` vào code.
 - Chỉ đường: OSRM miễn phí `routing.openstreetmap.de`. Thời tiết: Open-Meteo.
 

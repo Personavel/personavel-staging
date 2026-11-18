@@ -21,6 +21,6 @@ for k,v in d['img'].items():
     open(f'{W}/{k}.webp','wb').write(enc(v,760,72)); wi[k]=f'img/{k}.webp'
     open(f'{W}/t/{k}.webp','wb').write(enc(v,160,70)); wt[k]=f'img/t/{k}.webp'
 for i,g in enumerate(d['gal']):
-    open(f'{W}/g{i}.webp','wb').write(enc(g['src'],1600,66)); open(f'{W}/g{i}-800.webp','wb').write(enc(g['src'],800,62)); open(f'{W}/g{i}-1200.webp','wb').write(enc(g['src'],1200,60)); wg.append(dict(meta(g),src=f'img/g{i}.webp'))
+    open(f'{W}/g{i}.webp','wb').write(enc(g['src'],1600,66)); open(f'{W}/g{i}-800.webp','wb').write(enc(g['src'],800,62)); open(f'{W}/g{i}-1200.webp','wb').write(enc(g['src'],1200,60)); (i == 0 and open(f'{W}/g0-480.webp','wb').write(enc(g['src'],480,55)));  wg.append(dict(meta(g),src=f'img/g{i}.webp'))
 open('imgs_web.js','w').write('window.PV_IMG='+json.dumps(wi)+';\nwindow.PV_THUMB='+json.dumps(wt)+';\nwindow.PV_GALLERY='+json.dumps(wg,ensure_ascii=False)+';\n')
 print('desk js KB',os.path.getsize('imgs_desk.js')//1024,'web js KB',os.path.getsize('imgs_web.js')//1024)

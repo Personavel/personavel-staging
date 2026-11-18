@@ -197,7 +197,7 @@ PV.langGate = (next) => {
   });
 };
 PV.init = () => {
-  const boot = document.getElementById('boot'); if (boot) setTimeout(() => boot.remove(), 0);   // first-paint placeholder from index.html
+  const boot = document.getElementById('boot'); if (boot) requestAnimationFrame(() => { boot.classList.add('out'); setTimeout(() => boot.remove(), 300); });   // static hero from index.html
   if (state.settings.apiKey || state.settings.model){ delete state.settings.apiKey; delete state.settings.model; PV.save('settings'); }   // never keep API keys in the browser
   document.body.classList.toggle('reduce', !!state.settings.reduce);
   PV.shell();

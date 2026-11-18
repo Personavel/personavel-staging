@@ -19,6 +19,13 @@ const token = () => {
   if (!state.cloudToken){ const a = new Uint8Array(24); crypto.getRandomValues(a); state.cloudToken = [...a].map(x=>x.toString(16).padStart(2,'0')).join(''); PV.save('cloudToken'); }
   return state.cloudToken;
 };
+/* one random id per browser (not per profile): the server allows 5 posts/hour per device and 20/hour per network,
+   so a whole class on the same wifi can still post. Only its hash is stored. */
+const deviceId = () => {
+  let d = PV.store.get('deviceId', null);
+  if (!/^[0-9a-f]{32,64}$/.test(d || '')){ const a = new Uint8Array(20); crypto.getRandomValues(a); d = [...a].map(x=>x.toString(16).padStart(2,'0')).join(''); PV.store.set('deviceId', d); }
+  return d;
+};
 const hdr = (extra={}) => ({apikey: CLOUD.key, Authorization: 'Bearer ' + CLOUD.key, ...extra});
 
 /* ---------- photos ---------- */
@@ -70,7 +77,7 @@ PV.rvPhotos = {
     $$('.rp-del', el).forEach(b => b.onclick = (e) => { e.preventDefault(); const i = +b.dataset.i; const ph = photos[i]; if (ph && ph.k) PV.photoDB.del(ph.k); onChange(photos.filter((_,k)=>k!==i)); });
   },
   /* read-only grid */
-  grid(photos){ if (!photos || !photos.length) return ''; return `<div class="rp-grid n${Math.min(photos.length,4)}">${photos.map((p,i)=>`<button type="button" class="rp-th" data-zoom="${i}"><img ${p.u?`src="${esc(PV.safeImg(p.u))}"`:`data-phk="${esc(p.k)}"`} alt="" loading="lazy"></button>`).join('')}</div>`; },
+  grid(photos){ if (!photos || !photos.length) return ''; return `<div class="rp-grid n${Math.min(photos.length,4)}">${photos.map((p,i)=>`<button type="button" class="rp-th${p.pending?' pend':''}" data-zoom="${i}"><img ${p.u?`src="${esc(PV.safeImg(p.u))}"`:`data-phk="${esc(p.k)}"`} alt="" loading="lazy">${p.pending?`<em class="rp-pend">${L('Chờ duyệt','Pending')}</em>`:''}</button>`).join('')}</div>`; },
   bindGrid(root, photos, cap){ hydrate(root); $$('[data-zoom]', root).forEach(b => b.onclick = async () => { const list = []; for (const p of photos){ const s = await srcOf(p); if (s) list.push({src:s, cap}); } if (list.length) PV.lightbox(list, Math.min(+b.dataset.zoom, list.length-1)); }); }
 };
 
@@ -115,15 +122,16 @@ PV.community = {
   async publish(kind, target, r){
     if (!on()) return null;
     const gate = checkPost(r);
-    const photos = [];
-    for (const p of (r.photos || [])){ if (p.u) photos.push(p); else { const d = await PV.photoDB.get(p.k); if (d) photos.push({k:p.k, u: await upload(d)}); } }
+    const photos = []; let fresh = 0;
+    for (const p of (r.photos || [])){ if (p.u) photos.push({k:p.k, u:p.u}); else { const d = await PV.photoDB.get(p.k); if (d){ photos.push({k:p.k, u: await upload(d)}); fresh++; } } }
     const body = {p_token: token(), p_kind: kind, p_target: target, p_author: (state.profile?.name || L('Du khách','Traveller')).slice(0,40),
-      p_stars: r.stars || 0, p_love: !!(r.fav || r.love), p_tags: (r.tags||[]).slice(0,10), p_body: (r.text||'').slice(0,800), p_photos: photos.map(p=>p.u).slice(0,MAXP)};
+      p_stars: r.stars || 0, p_love: !!(r.fav || r.love), p_tags: (r.tags||[]).slice(0,10), p_body: (r.text||'').slice(0,800), p_photos: photos.map(p=>p.u).slice(0,MAXP), p_device: deviceId()};
     const res = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_upsert_review`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify(body)});
     if (!res.ok){ let m = ''; try { m = (await res.json()).message || ''; } catch(e){}
       if (/inappropriate|rate limit/i.test(m)) throw Object.assign(new Error(m), {userMsg: /rate/i.test(m) ? L('Máy chủ đang giới hạn số lần gửi – thử lại sau ít phút nhé.', 'The server is limiting posts – try again in a few minutes.') : L('Đánh giá có từ ngữ không phù hợp nên chưa được đăng.', 'Your review contains inappropriate words and was not posted.')});
       throw new Error('publish ' + res.status); }
     gate.mark();
+    if (fresh) setTimeout(() => PV.toast(L('📷 Ảnh mới sẽ hiện công khai sau khi nhóm duyệt (bạn vẫn thấy ảnh của mình).', '📷 New photos go public after the team approves them (you can still see yours).')), 1600);
     let id = null; try { id = await res.json(); } catch(e){}
     return {photos, id};
   },
@@ -134,12 +142,12 @@ PV.community = {
   async list(kind, target, offset = 0){
     if (on()){
       try {
-        const r = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_list_reviews_page`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_kind: kind, p_target: target, p_limit: PAGE, p_offset: offset})});
+        const r = await fetch(`${CLOUD.url}/rest/v1/rpc/pv_list_reviews_page`, {method:'POST', headers: hdr({'content-type':'application/json'}), body: JSON.stringify({p_kind: kind, p_target: target, p_limit: PAGE, p_offset: offset, p_token: token()})});
         if (r.ok){ const rows = await r.json();
           const mineIds = new Set([...Object.values(state.reviews||{}).map(v=>v&&v.cloudId), state.appReview && state.appReview.cloudId].filter(Boolean));
           const f = rows[0] || {};
           return {cloud:true, total: +f.total || 0, avg: +f.avg_stars || 0, loves: +f.loves || 0,
-            rows: rows.map(x => ({id:x.id, author:x.author, stars:x.stars, love:x.love, tags:x.tags||[], text:x.body||'', photos:(x.photos||[]).filter(u=>PV.safeImg(u)).map(u=>({u})), at:new Date(x.updated_at).toLocaleDateString('vi-VN'), mine: mineIds.has(x.id)}))}; }
+            rows: rows.map(x => ({id:x.id, author:x.author, stars:x.stars, love:x.love, tags:x.tags||[], text:x.body||'', photos:[...(x.photos||[]).filter(u=>PV.safeImg(u)).map(u=>({u, ok:true})), ...(x.pending||[]).filter(u=>PV.safeImg(u)).map(u=>({u, pending:true}))], at:new Date(x.updated_at).toLocaleDateString('vi-VN'), mine: !!x.mine || mineIds.has(x.id)}))}; }
       } catch(e){ /* fall back to this device */ }
     }
     // this device: current profile + every saved profile

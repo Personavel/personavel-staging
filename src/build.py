@@ -31,7 +31,7 @@ def head(extra=''):
 <meta name="theme-color" content="#3D7FB8">
 <link rel="icon" href="{'assets/icon-192.png' if WEB else ''}" type="image/png">
 {extra}<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="{FONTS}" rel="stylesheet">'''
+<link href="{FONTS}" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="{FONTS}" rel="stylesheet"></noscript>'''
 
 if not WEB:
     # ---------- single offline file ----------
@@ -92,25 +92,59 @@ seo = f'''<link rel="canonical" href="{SITE}">
 <meta property="og:title" content="{TITLE}"><meta property="og:description" content="{DESC}">
 <meta property="og:url" content="{SITE}"><meta property="og:image" content="{SITE}assets/og.jpg"><meta property="og:locale" content="vi_VN"><meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{TITLE}"><meta name="twitter:description" content="{DESC}"><meta name="twitter:image" content="{SITE}assets/og.jpg">
-<script>(function(){{try{{var i=(JSON.parse(localStorage.getItem('pv_heroIdx'))+1)%{ng};if(!(i>=0))i=0}}catch(e){{i=0}}var l=document.createElement('link');l.rel='preload';l.as='image';l.setAttribute('imagesrcset','img/g'+i+'-800.webp 800w, img/g'+i+'-1200.webp 1200w, img/g'+i+'.webp 1600w');l.setAttribute('imagesizes','100vw');l.setAttribute('fetchpriority','high');document.head.appendChild(l)}})()</script><link rel="preload" href="{app_css}" as="style"><link rel="preload" href="{data_js}" as="script"><link rel="preload" href="{app_js}" as="script">
+<link rel="preload" href="{app_css}" as="style"><link rel="preload" href="{data_js}" as="script"><link rel="preload" href="{app_js}" as="script">
 '''
-# a tiny first screen painted before the app script runs (removed by PV.init)
-boot = '''<div id="boot" aria-hidden="true"><div class="boot-bot"></div><b>Personavel</b><span>Your trip · Your story</span></div>'''
-boot_css = '#boot{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:linear-gradient(160deg,#F4F9FE,#DCEBF8 60%,#CFE3F6);color:#1F4E79;font-family:Nunito,system-ui,sans-serif;z-index:1}#boot b{font-size:34px;font-weight:800;letter-spacing:.5px}#boot span{font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:.7}.boot-bot{width:54px;height:54px;border-radius:50%;border:5px solid #CFE3F6;border-top-color:#3D7FB8;animation:bspin 1s linear infinite}@keyframes bspin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.boot-bot{animation:none}}'
+# static first screen (hero photo + greeting) painted before any app script runs – this is the LCP element.
+# The <link rel=preload imagesrcset> in <head> already fetches the same photo; app4.js fades this layer out once the app is drawn.
+boot = f"""<div id="boot" aria-hidden="true"><img id="boot-img" alt="" width="1600" height="1067" fetchpriority="high" sizes="(min-width:821px) 100vw, 64vw" srcset="img/g0-480.webp 480w, img/g0-800.webp 800w, img/g0-1200.webp 1200w, img/g0.webp 1600w" src="img/g0-800.webp"><div class="boot-shade"></div>
+<div class="boot-txt"><b>Personavel</b><p class="boot-hi"><span id="boot-hello">Xin chào,</span> <em id="boot-name">Du khách</em>!</p><span id="boot-sub">Bản đồ du lịch tự túc TP.HCM</span><i class="boot-bot"></i></div></div>
+<script>(function(){{var g=function(k,d){{try{{var v=JSON.parse(localStorage.getItem('pv_'+k));return v==null?d:v}}catch(e){{return d}}}};
+var en=(g('settings',{{}})||{{}}).lang==='en',p=g('profile',null),n=p&&p.name?String(p.name).slice(0,40):(en?'Traveller':'Du khách');document.getElementById('boot-name').textContent=n;
+if(en){{document.getElementById('boot-hello').textContent='Hello,';document.getElementById('boot-sub').textContent='Self-guided travel map of Ho Chi Minh City'}}}})()</script>"""
+boot_css = ('#boot{position:fixed;inset:0;z-index:1;overflow:hidden;background:#1F4E79;color:#fff;font-family:Nunito,system-ui,sans-serif;transition:opacity .25s}'
+  '#boot.out{opacity:0;pointer-events:none}#boot-img{position:absolute;left:0;right:0;top:0;width:100%;height:72%;object-fit:cover}'
+  '.boot-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,61,145,.1) 0,rgba(31,78,121,.5) 45%,#1F4E79 71%)}'
+  '.boot-txt{position:absolute;left:0;right:0;bottom:12vh;display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 20px;text-align:center;text-shadow:0 2px 10px rgba(0,0,0,.35)}'
+  '.boot-txt b{font-size:clamp(30px,8vw,46px);font-weight:800;letter-spacing:.5px}.boot-hi{margin:0;font-size:clamp(20px,5.4vw,28px);font-weight:700}.boot-hi em{font-style:normal;color:#CFE3F6}'
+  '#boot-sub{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;opacity:.9}'
+  '.boot-bot{width:34px;height:34px;margin-top:10px;border-radius:50%;border:4px solid rgba(255,255,255,.35);border-top-color:#fff;animation:bspin 1s linear infinite}'
+  '@keyframes bspin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.boot-bot{animation:none}#boot{transition:none}}')
+# service worker registration: a new version waits until the visitor taps "Reload" (never swapped mid-use);
+# ?nosw in the address bar removes the service worker and every cache on this device (emergency switch)
+sw_reg = ("(function(){if(!('serviceWorker' in navigator))return;var q=location.search;"
+  "if(/[?&]nosw\\b/.test(q)){try{sessionStorage.setItem('pv_nosw','1')}catch(e){}navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))})"
+  ".then(function(){return window.caches?caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))}):0})"
+  ".then(function(){location.replace(location.pathname+location.hash)});return}"
+  "try{if(sessionStorage.getItem('pv_nosw'))return}catch(e){}if(location.protocol!=='https:')return;"
+  "var en=false;try{en=(JSON.parse(localStorage.getItem('pv_settings'))||{}).lang==='en'}catch(e){}"
+  "var asked=false;function bar(w){if(document.getElementById('pv-upd'))return;var d=document.createElement('div');d.id='pv-upd';d.setAttribute('role','status');"
+  "d.style.cssText='position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99999;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 24px);padding:10px 12px 10px 16px;border-radius:14px;background:#0B3D91;color:#fff;font:600 14px/1.3 Nunito,system-ui,sans-serif;box-shadow:0 8px 24px rgba(11,61,145,.35)';"
+  "d.innerHTML='<span>'+(en?'A new version is available':'Có phiên bản mới')+'</span>';"
+  "var b=document.createElement('button');b.type='button';b.textContent=en?'Reload':'Tải lại';b.style.cssText='border:0;border-radius:10px;padding:8px 14px;background:#fff;color:#0B3D91;font:800 14px Nunito,system-ui,sans-serif;cursor:pointer';"
+  "b.onclick=function(){asked=true;b.disabled=true;w.postMessage('SKIP_WAITING');setTimeout(function(){location.reload()},3000)};"
+  "var x=document.createElement('button');x.type='button';x.setAttribute('aria-label',en?'Later':'Để sau');x.textContent='✕';x.style.cssText='border:0;background:none;color:#CFE3F6;font-size:16px;cursor:pointer;padding:4px';x.onclick=function(){d.remove()};"
+  "d.appendChild(b);d.appendChild(x);document.body.appendChild(d)}"
+  "navigator.serviceWorker.addEventListener('controllerchange',function(){if(asked)location.reload()});"
+  "addEventListener('load',function(){navigator.serviceWorker.register('sw.js').then(function(r){"
+  "function watch(w){w.addEventListener('statechange',function(){if(w.state==='installed'&&navigator.serviceWorker.controller)bar(w)})}"
+  "if(r.waiting&&navigator.serviceWorker.controller)bar(r.waiting);if(r.installing)watch(r.installing);"
+  "r.addEventListener('updatefound',function(){watch(r.installing)});"
+  "document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')r.update().catch(function(){})})"
+  "}).catch(function(){})})})()")
 html = f'''<!DOCTYPE html>
 <html lang="vi">
 <head>
 {head(seo)}
-<link rel="stylesheet" href="{app_css}">
 <style>{boot_css}</style>
-<script>window.PV_LEAFLET={{css:"{lf_css}",js:"{lf_js}"}};</script>
-<script defer src="{data_js}"></script>
-<script defer src="{app_js}"></script>
 </head>
 <body>
 {boot}
+<link rel="stylesheet" href="{app_css}">
+<script>window.PV_LEAFLET={{css:"{lf_css}",js:"{lf_js}"}};</script>
+<script defer src="{data_js}"></script>
+<script defer src="{app_js}"></script>
 <noscript><p style="padding:20px;font-family:sans-serif">Personavel cần bật JavaScript. · Personavel needs JavaScript enabled.</p></noscript>
-<script>if('serviceWorker' in navigator && location.protocol==='https:'){{addEventListener('load',function(){{navigator.serviceWorker.register('sw.js').catch(function(){{}})}})}}</script>
+<script>{sw_reg}</script>
 </body>
 </html>
 '''
@@ -125,22 +159,35 @@ json.dump({"name": "Personavel – Bản đồ du lịch tự túc TP.HCM", "sho
           open(os.path.join(ROOT, 'manifest.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 ver = hashlib.sha256((app_js + app_css + data_js + lf_js).encode()).hexdigest()[:10]
 shell = ['./', 'index.html', app_css, data_js, app_js, lf_css, lf_js, 'manifest.json', 'assets/icon-192.png']
-open(os.path.join(ROOT, 'sw.js'), 'w', encoding='utf-8').write(f'''/* Personavel service worker – generated by src/build.py ({ver}) */
+KILL = '--kill-sw' in sys.argv
+if KILL:
+    # emergency: a service worker that deletes every cache, unregisters itself and reloads open tabs from the network
+    open(os.path.join(ROOT, 'sw.js'), 'w', encoding='utf-8').write('''/* Personavel – emergency service worker removal (python3 src/build.py web --kill-sw) */
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k))))
+  .then(() => self.registration.unregister()).then(() => self.clients.matchAll({type: 'window'})).then(cs => cs.forEach(c => c.navigate(c.url)))));
+''')
+else:
+    open(os.path.join(ROOT, 'sw.js'), 'w', encoding='utf-8').write(f'''/* Personavel service worker – generated by src/build.py ({ver}) */
 const V = 'pv-{ver}', SHELL = {json.dumps(shell)};
-self.addEventListener('install', e => {{ e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); }});
+// a new version installs in the background and WAITS; the page shows "Có phiên bản mới – Tải lại" and sends SKIP_WAITING
+self.addEventListener('install', e => {{ e.waitUntil(caches.open(V).then(c => c.addAll(SHELL))); }});
+self.addEventListener('message', e => {{ if (e.data === 'SKIP_WAITING') self.skipWaiting(); }});
 self.addEventListener('activate', e => {{ e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V && k !== 'pv-img').map(k => caches.delete(k)))).then(() => self.clients.claim())); }});
 self.addEventListener('fetch', e => {{
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;            // maps, Supabase, routing: always live
-  if (e.request.mode === 'navigate') {{                                               // page: network first, offline copy as fallback
-    e.respondWith(fetch(e.request).then(r => {{ const c = r.clone(); caches.open(V).then(x => x.put('index.html', c)); return r; }}).catch(() => caches.match('index.html')));
+  if (u.pathname.endsWith('/sw.js')) return;
+  if (e.request.mode === 'navigate') {{                                               // HTML: network first, offline copy only as fallback
+    e.respondWith(fetch(e.request, {{cache: 'no-cache'}}).then(r => {{ if (r.ok && !u.search.includes('nosw')) {{ const c = r.clone(); caches.open(V).then(x => x.put('index.html', c)); }} return r; }})
+      .catch(() => caches.open(V).then(x => x.match('index.html')).then(h => h || caches.match('index.html'))));
     return;
   }}
   if (u.pathname.includes('/img/')) {{                                                // photos: cache first
     e.respondWith(caches.open('pv-img').then(c => c.match(e.request).then(hit => hit || fetch(e.request).then(r => {{ if (r.ok) c.put(e.request, r.clone()); return r; }}))));
     return;
   }}
-  e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request)));       // hashed assets: cache first
+  e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request)));       // hashed assets: cache first (file name changes with content)
 }});
 ''')
 today = datetime.date.today().isoformat()

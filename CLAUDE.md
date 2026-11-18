@@ -33,12 +33,14 @@ Bản đồ du lịch tự túc TP.HCM của nhóm 11A13, THPT Lê Quý Đôn. W
 python3 src/build.py web   # index.html + assets/ (JS/CSS nén, có mã băm) + sw.js + manifest.json + sitemap.xml
 python3 src/build.py       # dist/personavel.html – 1 file chạy offline, ảnh nhúng sẵn
 python3 src/gen_imgs.py    # chỉ chạy khi thêm/đổi ảnh (cần Pillow)
+python3 src/build.py web --kill-sw   # CHỈ khi bản mới lỗi nặng: sw.js tự gỡ trên máy mọi người (xem docs/setup.md)
 ```
-Nén code dùng `npx esbuild` (cần Node). Sau mỗi thay đổi: build cả hai, mở thử trên khung điện thoại (375px) cả Việt lẫn Anh, rồi commit `src/` **và** các file sinh ra (`index.html`, `assets/`, `sw.js`) cùng lúc. Checklist: `docs/checklist.md`.
+Nén code dùng `npx esbuild` (cần Node). Sau mỗi thay đổi: build cả hai, mở thử trên khung điện thoại (375px) cả Việt lẫn Anh, rồi commit `src/` **và** các file sinh ra (`index.html`, `assets/`, `sw.js`) cùng lúc. Checklist: `docs/checklist.md`. Trang thử nghiệm trước khi gộp vào `main`: `docs/staging.md`.
+`index.html` có sẵn màn đầu tiên tĩnh (`#boot`, ảnh `img/g0-480.webp`) – app4.js làm mờ nó khi app vẽ xong.
 Thêm module JS mới: khai báo trong danh sách `APP` của `src/build.py` (trước `app4.js`). Không đặt tên biến `L` trong module – trùng với thư viện bản đồ Leaflet.
 
 ## Máy chủ
-- Supabase project **Personavel** (`bwtmunpzdxtutspdpphb`) – bảng `reviews` + kho ảnh `review-photos`. Cấu trúc ở `supabase/migrations/` (xem `docs/setup.md`).
+- Supabase project **Personavel** (`bwtmunpzdxtutspdpphb`) – bảng `reviews` + kho ảnh `review-photos`. Cấu trúc ở `supabase/migrations/` 001→004 (xem `docs/setup.md`: duyệt ảnh, giới hạn gửi). Đổi hàm database phải giữ tên + tham số cũ để web trên `main` vẫn chạy.
   Khóa trong `src/community.js` là khóa công khai (anon) – không đưa khóa `service_role` vào code.
 - Chỉ đường: OSRM miễn phí `routing.openstreetmap.de`. Thời tiết: Open-Meteo.
 

@@ -138,6 +138,34 @@ PV.guideSuggest = (id) => {
     phuong: [L('⛪ Kiến trúc Nhà thờ Đức Bà','⛪ Architecture of Notre-Dame Cathedral'), L('🙏 Kể về Chùa Vĩnh Nghiêm','🙏 Tell me about Vĩnh Nghiêm Pagoda'), L('🎭 Nhà hát Thành phố có gì?','🎭 What is the Opera House like?'), L('👗 Đi Nhà thờ Đức Bà cần lưu ý gì?','👗 What to know before visiting Notre-Dame Cathedral?')]
   })[id] || [];
 };
+/* what each guide offers – used by the greeting, "who are you", the default answer and the Home button */
+PV.guideOffer = (id) => {
+  const L = (vi, en) => PV.L(vi, en);
+  const g = (window.PV.GUIDES || []).find(x => x.id === id) || {name: ''};
+  const O = {
+    an: {ask: L('Bạn muốn nghe kể chuyện về địa danh nào, hay tìm hiểu ý nghĩa một tên đường?', 'Which landmark would you like a story about, or which street name should I explain?'),
+         can: L('kể chuyện lịch sử, di tích, bảo tàng và ý nghĩa tên đường', 'history, monuments, museums and the meaning of street names'),
+         cta: L(`Nghe kể chuyện với ${g.name}`, `Stories with ${g.name}`),
+         ex: [L('Kể chuyện về Dinh Độc Lập', 'Tell me about the Independence Palace'), L('Đường Nguyễn Huệ có ý nghĩa gì?', 'What does Nguyễn Huệ street mean?'), L('Bảo tàng nào nên ghé?', 'Which museum should I visit?')]},
+    uyen: {ask: L('Hôm nay bạn muốn ăn gì – phở, bánh mì, quán chay hay cà phê?', 'What would you like to eat today – phở, bánh mì, vegetarian or coffee?'),
+         can: L('gợi ý quán ăn, món ngon, quán Michelin, cà phê và món chay', 'eateries, dishes, Michelin places, coffee and vegetarian food'),
+         cta: L(`Tìm quán ngon với ${g.name}`, `Find good food with ${g.name}`),
+         ex: [L('Phở ngon', 'Good phở'), L('Bánh mì ngon ở đâu?', 'Where is good bánh mì?'), L('Quán chay ngon', 'Good vegetarian food')]},
+    ha: {ask: L('Bạn muốn mình lên lịch trình, chỉ đường hay xem giờ mở cửa và thời tiết?', 'Shall I plan an itinerary, give directions, or check opening hours and the weather?'),
+         can: L('lên lịch trình, chỉ đường, đi lại, giờ mở cửa, giá vé, thời tiết và lưu ý an toàn', 'itineraries, directions, getting around, opening hours, tickets, weather and safety tips'),
+         cta: L(`Lên lịch trình với ${g.name}`, `Plan a trip with ${g.name}`),
+         ex: [L('Lên lịch trình 1 ngày', 'Plan a 1-day itinerary'), L('Lịch trình buổi tối, đi bộ, tiết kiệm', 'Evening itinerary, walking, on a budget'), L('Dinh Độc Lập mấy giờ mở cửa?', 'When does the Independence Palace open?')]},
+    kiet: {ask: L('Bạn muốn tìm góc check-in đẹp hay chỗ mua quà lưu niệm?', 'Looking for great photo spots, or a place to buy souvenirs?'),
+         can: L('tìm góc chụp đẹp, giờ đẹp để chụp, trang phục chụp ảnh và chỗ mua sắm, quà lưu niệm', 'photo spots, the best light, outfits for photos, shopping and souvenirs'),
+         cta: L(`Săn góc chụp với ${g.name}`, `Photo spots with ${g.name}`),
+         ex: [L('Góc check-in đẹp', 'Nice photo spots'), L('Chụp ảnh hoàng hôn ở đâu?', 'Where to shoot the sunset?'), L('Mua quà lưu niệm ở đâu?', 'Where to buy souvenirs?')]},
+    phuong: {ask: L('Bạn muốn tìm hiểu kiến trúc nhà thờ, chùa, hay phong tục và lễ hội nào?', 'Would you like to learn about church or pagoda architecture, or a custom or festival?'),
+         can: L('kiến trúc, nhà thờ – chùa – đình, lễ hội, phong tục và cách ăn mặc, ứng xử khi tham quan', 'architecture, churches, pagodas and temples, festivals, customs and visiting etiquette'),
+         cta: L(`Khám phá văn hóa với ${g.name}`, `Culture with ${g.name}`),
+         ex: [L('Kiến trúc Nhà thờ Đức Bà', 'Architecture of Notre-Dame Cathedral'), L('Kể về Chùa Vĩnh Nghiêm', 'Tell me about Vĩnh Nghiêm Pagoda'), L('Đi Nhà thờ Đức Bà cần lưu ý gì?', 'What to know before visiting Notre-Dame Cathedral?')]}
+  };
+  return O[id] || O.ha;
+};
 PV.GUIDE_TOPIC = (id) => PV.L(({an:'lịch sử, di tích và câu chuyện tên đường', uyen:'ăn uống', ha:'lịch trình, đi lại, giờ mở cửa và thời tiết', kiet:'chụp ảnh và mua sắm', phuong:'văn hóa, kiến trúc và phong tục'})[id] || '',
   ({an:'history, monuments and street-name stories', uyen:'food and drink', ha:'itineraries, getting around, opening hours and weather', kiet:'photos and shopping', phuong:'culture, architecture and customs'})[id] || '');
 

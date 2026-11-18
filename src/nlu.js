@@ -104,8 +104,8 @@ PV.localAnswer = (text) => {
   const {hit, rest} = stripGreeting(raw);
   if (hit && onlyFiller(rest)){
     const h = new Date().getHours(), part = h < 11 ? L('buổi sáng','morning') : h < 14 ? L('buổi trưa','noon') : h < 18 ? L('buổi chiều','afternoon') : L('buổi tối','evening');
-    return {t: L(`Chào ${name || 'bạn'}! Chúc bạn một ${part} vui vẻ 😊 Mình là ${g.name}. Hôm nay bạn muốn lên lịch trình, tìm quán ngon hay nghe kể chuyện về một địa danh?`,
-                 `Hi ${name || 'there'}! Have a lovely ${part} 😊 I'm ${g.name}. Would you like an itinerary, a good place to eat, or a story about a landmark?`)};
+    return {t: L(`Chào ${name || 'bạn'}! Chúc bạn một ${part} vui vẻ 😊 Mình là ${g.name}. ${PV.guideOffer ? PV.guideOffer(g.id).ask : 'Hôm nay bạn muốn lên lịch trình, tìm quán ngon hay nghe kể chuyện về một địa danh?'}`,
+                 `Hi ${name || 'there'}! Have a lovely ${part} 😊 I'm ${g.name}. ${PV.guideOffer ? PV.guideOffer(g.id).ask : 'Would you like an itinerary, a good place to eat, or a story about a landmark?'}`)};
   }
   const msg = hit ? rest : raw;
 
@@ -113,7 +113,7 @@ PV.localAnswer = (text) => {
   const short = words(msg).trim().split(' ').length <= 5;
   if (short && inList(msg, THANKS)) return {t: L(`Không có gì đâu${name?', '+name:''}! Cần gì cứ hỏi mình nhé 💙`, `You're welcome${name?', '+name:''}! Ask me anything 💙`)};
   if (short && inList(msg, BYE)) return {t: L('Tạm biệt! Chúc bạn có chuyến đi thật vui, nhớ đóng mộc ở mỗi nơi bạn ghé nhé 👋', 'Bye! Have a great trip – remember to collect a stamp at each place 👋')};
-  if (inList(msg, WHO)) return {t: L(`Mình là ${g.name}, hướng dẫn viên ảo của Personavel 🤖 Mình giúp bạn lên lịch trình, gợi ý quán ăn, kể chuyện địa danh và giải thích tên đường ở TP.HCM.`, `I'm ${g.name}, Personavel's virtual guide 🤖 I plan trips, suggest food, tell landmark stories and explain street names in HCMC.`)};
+  if (inList(msg, WHO)) return {t: L(`Mình là ${g.name}, hướng dẫn viên ảo của Personavel 🤖 Mình chuyên ${PV.guideOffer ? PV.guideOffer(g.id).can : 'lên lịch trình, gợi ý quán ăn, kể chuyện địa danh và giải thích tên đường'} ở TP.HCM.${PV.guideOffer ? ' ' + PV.guideOffer(g.id).ask : ''}`, `I'm ${g.name}, Personavel's virtual guide 🤖 I look after ${PV.guideOffer ? PV.guideOffer(g.id).can : 'trips, food, landmark stories and street names'} in HCMC.${PV.guideOffer ? ' ' + PV.guideOffer(g.id).ask : ''}`)};
   if (short && inList(msg, HOW)) return {t: L('Mình khỏe lắm, cảm ơn bạn! Còn bạn, hôm nay muốn đi đâu chơi nè?', "I'm great, thanks! Where would you like to go today?")};
 
   // 3) yes / no after the bot offered something

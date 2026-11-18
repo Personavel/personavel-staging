@@ -223,7 +223,7 @@ PV.chatCore = (root) => {
   const q = s => root.querySelector(s);
   const msgs = q('.msgs'), ci = q('.composer input');
   const g = PV.todayGuide();
-  if (!state.chat.length) state.chat.push({r:'bot', t:`${PV.L(g.greet, PV.tr(g.greet))}\n${state.profile?.persona ? PV.L('Mình thấy bạn là “'+state.profile.persona.name+'”. ', 'I see you are a “'+PV.tr(state.profile.persona.name)+'”. ') : ''}${PV.L('Bạn muốn mình lên lịch trình, gợi ý quán ăn hay kể chuyện về một địa danh nào?','Would you like me to plan a trip, suggest places to eat or tell you about a landmark?')}`, g:g.id});
+  if (!state.chat.length) state.chat.push({r:'bot', t:`${PV.L(g.greet, PV.tr(g.greet))}\n${state.profile?.persona ? PV.L('Mình thấy bạn là “'+state.profile.persona.name+'”. ', 'I see you are a “'+PV.tr(state.profile.persona.name)+'”. ') : ''}${PV.guideOffer ? PV.guideOffer(g.id).ask : PV.L('Bạn muốn mình lên lịch trình, gợi ý quán ăn hay kể chuyện về một địa danh nào?','Would you like me to plan a trip, suggest places to eat or tell you about a landmark?')}`, g:g.id});
   msgs.innerHTML = '';
   state.chat.forEach(c => msgs.insertAdjacentHTML('beforeend', bubble(c)));
   bindCards(msgs); msgs.scrollTop = msgs.scrollHeight;
@@ -431,6 +431,8 @@ PV.localAnswer = (text) => {
   if (has('di dao','dao pho','dao choi','pho di bo','di bo dao','walk around','stroll','walking street')) return {t:L('Đi dạo thì mấy chỗ này vừa đẹp vừa gần nhau, bạn có thể đi bộ nối tiếp:','For a stroll, these spots are pretty and close together – easy to walk between:'), places:pick(p=>p.cats.includes('checkin')||p.cats.includes('history'),5)};
   if (has('check in','chup','song ao','dep','photo','picture','instagram')) return {t:L('Mấy góc check-in đẹp đây:','Here are some great photo spots:'), places:pick(p=>p.cats.includes('checkin'),5)};
   if (hasA('xin chào','chào','chào bạn') || has('hello','hi','hey')) { const g=PV.todayGuide(); return {t:L(`${g.greet} Bạn cần mình giúp gì nào?`, `${PV.tr(g.greet)} How can I help?`)}; }
+  if (PV.guideOffer){ const g = PV.todayGuide(), o = PV.guideOffer(g.id);   // only what this guide does
+    return {t: L(`Mình là ${g.name}, mình chuyên ${o.can}. Bạn thử hỏi:\n${o.ex.map(x => '• ' + x).join('\n')}`, `I'm ${g.name} – I can help with ${o.can}. Try asking:\n${o.ex.map(x => '• ' + x).join('\n')}`)}; }
   return {t:L('Mình có thể giúp bạn:\n• Lên lịch trình (vd: “lên lịch trình buổi tối, đi bộ, tiết kiệm”)\n• Gợi ý quán theo món (vd: “phở ngon gần đây”)\n• Kể chuyện địa danh (vd: “kể về Bưu điện Thành phố”)\n• Giải thích tên đường (vd: “đường Hai Bà Trưng có ý nghĩa gì”)',
     'I can help you:\n• Plan a trip (e.g. “evening itinerary, walking, on a budget”)\n• Suggest food by dish (e.g. “good phở near me”)\n• Tell landmark stories (e.g. “tell me about the Central Post Office”)\n• Explain street names (e.g. “what does Hai Bà Trưng street mean”)'), places:PV.recommend(3).map(p=>p.id)};
 };

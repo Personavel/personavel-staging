@@ -6,7 +6,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const src = (f) => fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8');
 
 function load(lang){
-  const window = {PV: {L: (vi, en) => (lang === 'en' ? en : vi)}};
+  const window = {PV: {L: (vi, en) => (lang === 'en' ? en : vi), GUIDES: ['an','uyen','ha','kiet','phuong'].map(id => ({id, name: {an:'An',uyen:'Uyên',ha:'Hà',kiet:'Kiệt',phuong:'Phương'}[id]}))}};
   const ctx = vm.createContext({window, console});
   vm.runInContext(src('data.js'), ctx);
   vm.runInContext(src('guides.js'), ctx);
@@ -59,6 +59,17 @@ for (const lang of ['vi', 'en']){
     c.out.forEach(([q, want]) => check(`${g} ngoài phạm vi`, PV.routeChat(q, g), want, q));
     PV.guideSuggest(g).forEach(q => check(`${g} gợi ý (${lang})`, PV.routeChat(q.replace(/^\S+\s/, ''), g), 'own', q));
     SMALLTALK.forEach(q => check(`${g} xã giao`, PV.routeChat(q, g), 'any', q));
+  }
+  // greeting / "who are you" / default answer / Home button: each guide only offers its own topic
+  const NAMES = {an:'An', uyen:'Uyên', ha:'Hà', kiet:'Kiệt', phuong:'Phương'};
+  const GENERIC = /lên lịch trình, gợi ý quán ăn|plan trips, suggest food|plan a trip, suggest places|lịch trình, tìm quán ngon hay/i;
+  for (const g of Object.keys(CASES)){
+    const o = PV.guideOffer(g);
+    o.ex.forEach(q => check(`${g} ví dụ trong lời giới thiệu (${lang})`, PV.routeChat(q, g), 'own', q));
+    const ask = PV.routeChat(o.ask, g);
+    if (ask.verdict === 'other' || ask.verdict === 'off'){ fail++; console.log(`✗ ${g} câu chào hỏi sang việc của người khác: “${o.ask}” → ${ask.verdict} ${ask.to||''}`); } else pass++;
+    if (!o.cta.includes(NAMES[g]) || (g !== 'ha' && /lịch trình|plan a trip/i.test(o.cta))){ fail++; console.log(`✗ ${g} nút trang chủ sai phạm vi: “${o.cta}”`); } else pass++;
+    if (GENERIC.test(o.ask + ' ' + o.can)){ fail++; console.log(`✗ ${g} lời giới thiệu còn liệt kê việc của mọi trợ lý: “${o.can}”`); } else pass++;
   }
   // follow-ups go to the guide who just answered
   check('hỏi tiếp', PV.routeChat('mấy giờ mở cửa?', 'uyen', {lastPlaces: true}), 'any', 'mấy giờ mở cửa? (sau gợi ý quán)');

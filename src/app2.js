@@ -129,7 +129,7 @@ PV.views.home = (m) => {
   <div class="card hello hero" id="hero">${heroBg()}
     <div class="hero-text"><h1><span class="hi">Xin chào,</span><br><span class="nameline"><em>${esc(p?.name||PV.L('Du khách','Traveller'))}</em>!${PV.robot(g,{cls:'namebot'})}</span></h1>
     <div class="hero-box"><p class="muted" style="margin:0 0 12px"><span>Hôm nay</span> <b>${g.name}</b> <span>sẽ đồng hành cùng bạn.</span> <span>${esc(g.greet)}</span></p>
-    <div class="row"><a class="btn" href="#chat">Lên lịch trình với ${g.name}</a><a class="btn ghost" href="#map">Mở bản đồ</a></div></div></div>
+    <div class="row"><a class="btn notr" href="#chat">${PV.guideOffer ? esc(PV.guideOffer(g.id).cta) : 'Lên lịch trình với ' + g.name}</a><a class="btn ghost" href="#map">Mở bản đồ</a></div></div></div>
   </div>
   <div class="grid g4" style="margin-top:18px">
     <button type="button" class="card stat stat-link" data-act="visited" title="${PV.L('Xem danh sách','See the list')}"><b>${visitedN}</b><span class="muted small">địa điểm đã khám phá</span><i class="stat-go" aria-hidden="true">›</i></button>

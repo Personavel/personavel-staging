@@ -35,7 +35,7 @@ function reviewModal(it, done){
     drawPh();
     $('#meGo', bg).onclick = async () => { const b = $('#meGo', bg); b.disabled = true;
       try { const urls = await uploadAll(photos);
-        const out = await PV.rpc('pv_review_save', {p_kind: it.kind, p_target: it.target, p_stars: stars, p_love: !!(local.fav || local.love), p_tags: local.tags || [], p_body: $('#meBody', bg).value.trim(), p_photos: urls});
+        const out = await PV.rpc('pv_review_save', {p_kind: it.kind, p_target: it.target, p_stars: stars, p_love: typeof it.love === 'boolean' ? it.love : !!(local.fav || local.love), p_tags: Array.isArray(it.tags) ? it.tags : (local.tags || []), p_body: $('#meBody', bg).value.trim(), p_photos: urls});
         if (it.kind === 'place' && state.reviews){ const r = state.reviews[it.target] = {...(state.reviews[it.target] || {fav: false, tags: []}), stars, text: out.body, photos: urls.map(u => ({u})), cloudId: out.id, cloudAt: Date.now(), at: new Date().toLocaleDateString('vi-VN')}; PV.save('reviews'); }
         close(); PV.toast(T_('Đã lưu đánh giá ✅', 'Review saved ✅')); done && done(); }
       catch(e){ b.disabled = false; const el = $('.au-msg', box); el.hidden = false; el.className = 'au-msg err'; el.textContent = e.userMsg || PV.errText('PV_UNKNOWN'); } };

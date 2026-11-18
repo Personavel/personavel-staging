@@ -1,6 +1,7 @@
 /* ---------- "Lưu ý khi ghé" – smart visiting tips per place (+ live weather) ---------- */
 (() => {
 const L = (vi, en) => PV.L(vi, en);
+const esc = PV.esc;
 const has = (p, c) => p.cats && p.cats.includes(c);
 const N = (p) => PV.norm(p.name || '');
 

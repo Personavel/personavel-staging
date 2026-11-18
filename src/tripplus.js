@@ -95,29 +95,7 @@ PV.betterOrder = (t) => {
   return save > 0 ? {order: out, saveKm: save} : null;
 };
 
-/* ---------- real road route (OSRM, free) ---------- */
-const PROFILE = {walk:'routed-foot', moto:'routed-car', car:'routed-car', taxi:'routed-car', bus:'routed-car', metro:'routed-foot'};
-PV.osrm = async (pts, mode, steps = false) => {
-  const prof = PROFILE[mode] || 'routed-car';
-  const url = `https://routing.openstreetmap.de/${prof}/route/v1/driving/${pts.map(p => p[0].toFixed(6)+','+p[1].toFixed(6)).join(';')}?overview=full&geometries=geojson${steps?'&steps=true':''}`;
-  const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 12000);
-  try { const r = await fetch(url, {signal: ctl.signal}); if (!r.ok) throw 0; const j = await r.json(); if (j.code !== 'Ok' || !j.routes || !j.routes[0]) throw 0; return j.routes[0]; }
-  finally { clearTimeout(to); }
-};
-async function drawRealRoute(t){
-  const mp = PV._tripMap; if (!mp || !window.L || !t.origin || !t.stops.length) return;
-  const pts = [t.origin.c, ...t.stops.map(s => PV.byId(s.id).coords)];
-  try {
-    const r = await PV.osrm(pts, t.mode);
-    if (PV._tripMap !== mp) return;
-    const line = L.geoJSON(r.geometry, {style:{color:'#2F6FA3', weight:5, opacity:.9}}).addTo(mp);
-    if (PV._tripLine) PV._tripLine.setStyle({opacity:.25});
-    (r.legs || []).forEach((lg, i) => { const s = t.stops[i]; if (s && s.leg) s.leg.real = {km: lg.distance/1000, min: Math.round(lg.duration/60)}; });
-    const note = document.getElementById('tripRouteNote');
-    if (note) note.innerHTML = T_(`Đường xanh đậm là tuyến đường thực tế (~${PV.fmtKm(r.distance/1000)}). Bấm “Bắt đầu dẫn đường” để được chỉ từng ngã rẽ.`, `The solid blue line is the real road route (~${PV.fmtKm(r.distance/1000)}). Tap “Start navigation” for turn-by-turn guidance.`);
-    PV._tripRoute = line;
-  } catch(e){ /* offline or router busy: keep the straight lines */ }
-}
+/* real road route: see routes.js (PV.osrm, PV.drawTripRoute) */
 
 /* ---------- UI ---------- */
 function stopDetails(t, i){
@@ -173,6 +151,6 @@ PV.views.trip = (m) => {
   const host = $('#stops', m).closest('.grid'); host.insertAdjacentHTML('afterend', summaryCard(t));
   const ro = $('#pcReorder', m); if (ro) ro.onclick = () => { const b = PV.betterOrder(t); if (!b) return; t.stops = b.order; PV.retime(t); PV.save('trip'); PV.views.trip(m); PV.toast(T_('Đã sắp xếp lại lịch trình','Itinerary re-ordered')); };
   $('#navStart', m).onclick = () => PV.navConfirm ? PV.navConfirm(t) : null;
-  drawRealRoute(t);
+  if (PV.drawTripRoute) PV.drawTripRoute(t);
 };
 })();

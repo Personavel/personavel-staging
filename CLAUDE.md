@@ -26,6 +26,7 @@ Bản đồ du lịch tự túc TP.HCM của nhóm 11A13, THPT Lê Quý Đôn. W
 | `src/visited.js` | danh sách địa điểm đã đi |
 | `src/ux.js` | robot tự ẩn khi cuộn, thẻ 3 bước cho người mới |
 | `src/badges.js` | lưới huy hiệu + popup chi tiết; mọi `PV.modal` đóng bằng Esc và giữ focus |
+| `src/routes.js` | tuyến đường thật OSRM (xe: router.project-osrm.org, đi bộ: routing.openstreetmap.de), từng chặng, lưu đệm IndexedDB 30 ngày |
 | `src/guides.js` | phạm vi từng trợ lý (`PV.routeChat`), phiên chat riêng mỗi trợ lý – test: `node tests/chat-routing.test.js` |
 | `src/theme.js`, `style.css` | nền, màu chữ, giao diện |
 | `src/imgs*.js` | ảnh gốc (base64) – `gen_imgs.py` tạo `imgs_desk.js`, `imgs_web.js` và thư mục `img/` |
@@ -44,7 +45,7 @@ Thêm module JS mới: khai báo trong danh sách `APP` của `src/build.py` (tr
 ## Máy chủ
 - Supabase project **Personavel** (`bwtmunpzdxtutspdpphb`) – bảng `reviews` + kho ảnh `review-photos`. Cấu trúc ở `supabase/migrations/` 001→004 (xem `docs/setup.md`: duyệt ảnh, giới hạn gửi). Đổi hàm database phải giữ tên + tham số cũ để web trên `main` vẫn chạy.
   Khóa trong `src/community.js` là khóa công khai (anon) – không đưa khóa `service_role` vào code.
-- Chỉ đường: OSRM miễn phí `routing.openstreetmap.de`. Thời tiết: Open-Meteo.
+- Chỉ đường: OSRM miễn phí – xe `router.project-osrm.org`, đi bộ `routing.openstreetmap.de/routed-foot` (`src/routes.js`). Thời tiết: Open-Meteo.
 
 ## Làm chung không giẫm chân nhau
 - Trước khi sửa: `git pull`. Mỗi người làm một nhánh hoặc báo nhau đang sửa file nào.

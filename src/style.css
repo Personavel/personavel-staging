@@ -1596,3 +1596,22 @@ body.glass-dark .bm-how{background:rgba(255,255,255,.06);border-color:rgba(255,2
 .guide .gcount{position:absolute;top:2px;right:4px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#3D7FB8;color:#fff;font:800 11px/18px Nunito,system-ui,sans-serif;text-align:center}
 .guide:focus-visible{outline:3px solid #3D7FB8;outline-offset:2px}
 .askg{margin-top:8px}.askg .btn{display:inline-flex;align-items:center;gap:6px}
+
+/* ===== real route panel (itinerary) ===== */
+#tripRouteNote{margin:8px 2px 0!important}
+.rt-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rt-seg{display:inline-flex;border:1px solid #BCD6EE;border-radius:999px;padding:3px;background:#F4F9FE}
+.rt-seg button{border:0;background:none;padding:7px 14px;border-radius:999px;font:700 13px Nunito,system-ui,sans-serif;color:#1F4E79;cursor:pointer;min-height:36px}
+.rt-seg button[aria-pressed="true"]{background:#2F6FA3;color:#fff}
+.rt-total{font-size:14px;color:#1F4E79;margin-left:auto}
+.rt-legs{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rt-legs button{width:100%;display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;text-align:left;border:1px solid #D6E6F4;background:#fff;border-radius:12px;padding:8px 10px;
+  font:600 13px/1.3 Nunito,system-ui,sans-serif;color:#1F4E79;cursor:pointer;min-height:44px}
+.rt-legs button:hover,.rt-legs button.on{border-color:#2F6FA3;background:#EAF4FD}
+.rt-n{width:24px;height:24px;border-radius:50%;background:#2F6FA3;color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800}
+.rt-nm{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rt-v{white-space:nowrap;color:#3D7FB8;font-weight:800}
+.rt-err{margin-top:8px;padding:10px 12px;border-radius:12px;background:#FFF6E0;border:1px solid #F0D38A;color:#6B4A00;font-size:13px;line-height:1.45;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.rt-foot{margin:8px 0 0}.rt-attr a{color:inherit}
+@media (max-width:420px){ .rt-legs button{grid-template-columns:24px 1fr;} .rt-v{grid-column:2} .rt-total{margin-left:0;width:100%} }
+body.glass-dark .rt-legs button{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:var(--ink-l)}

@@ -32,7 +32,7 @@ src/                mã nguồn (xem bảng file trong CLAUDE.md)
 img/                ảnh WebP: hN.webp (địa điểm), t/ (ảnh nhỏ), gN(-800|-1200).webp (ảnh thành phố)
 assets/             JS/CSS/font đã nén – file sinh ra
 supabase/migrations/ cấu trúc database (chạy theo thứ tự 001 → 003)
-docs/               hướng dẫn cài đặt, báo cáo Lighthouse, checklist kiểm thử
+docs/               hướng dẫn cài đặt, báo cáo tiến độ (docs/bao-cao/), báo cáo Lighthouse, checklist kiểm thử
 ```
 
 ## Cấu trúc dữ liệu

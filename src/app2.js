@@ -127,22 +127,22 @@ PV.views.home = (m) => {
   const badges = PV.badges().filter(b=>b.got).length;
   m.innerHTML = `
   <div class="card hello hero" id="hero">${heroBg()}
-    <div class="hero-text"><h1><span class="hi">Xin chào,</span><br><span class="nameline"><em>${esc(p?.name||'bạn')}</em>!${PV.robot(g,{cls:'namebot'})}</span></h1>
+    <div class="hero-text"><h1><span class="hi">Xin chào,</span><br><span class="nameline"><em>${esc(p?.name||PV.L('Du khách','Traveller'))}</em>!${PV.robot(g,{cls:'namebot'})}</span></h1>
     <div class="hero-box"><p class="muted" style="margin:0 0 12px"><span>Hôm nay</span> <b>${g.name}</b> <span>sẽ đồng hành cùng bạn.</span> <span>${esc(g.greet)}</span></p>
     <div class="row"><a class="btn" href="#chat">Lên lịch trình với ${g.name}</a><a class="btn ghost" href="#map">Mở bản đồ</a></div></div></div>
   </div>
   <div class="grid g4" style="margin-top:18px">
-    <button type="button" class="card stat stat-link" data-act="visited" aria-label="Xem danh sách địa điểm đã khám phá"><b>${visitedN}</b><span class="muted small">địa điểm đã khám phá</span><i class="stat-go" aria-hidden="true">›</i></button>
+    <button type="button" class="card stat stat-link" data-act="visited" title="${PV.L('Xem danh sách','See the list')}"><b>${visitedN}</b><span class="muted small">địa điểm đã khám phá</span><i class="stat-go" aria-hidden="true">›</i></button>
     <div class="card stat"><b>${state.points}</b><span class="muted small">điểm tích lũy</span></div>
     <div class="card stat"><b>${badges}</b><span class="muted small">huy hiệu</span></div>
     <div class="card stat"><b>${state.trip.stops.length}</b><span class="muted small">điểm trong lịch trình</span></div>
   </div>
   <div class="grid g2" style="margin-top:18px">
-    <div class="card"><h3>Gợi ý dành riêng cho bạn</h3>
+    <div class="card"><h2 class="h3">Gợi ý dành riêng cho bạn</h2>
       <p class="muted small" style="margin-top:0">${p?.persona ? 'Dựa trên phong cách: <b>'+esc(p.persona.name)+'</b>' : 'Làm bài phân tích phong cách để nhận gợi ý chính xác hơn.'}</p>
       <div class="plist">${rec.map(PV.pitem).join('')}</div></div>
     <div class="grid" style="align-content:start">
-      <div class="card"><h3>Con đường kể chuyện hôm nay</h3>${(()=>{ const s=D.streets[Math.floor(Date.now()/864e5)%D.streets.length]; return `<p style="margin:0 0 6px"><b>Đường ${esc(s.name)}</b> <span class="tag">${esc(s.wards)}</span></p><p class="small" style="margin:0 0 10px">${esc(s.story)}</p><div class="row"><button class="btn sm" data-street="${s.id}">Xem trên bản đồ</button><button class="btn sm ghost" data-say="${s.id}">${ICON.speaker.replace('<svg','<svg width=16 height=16')} Nghe thuyết minh</button></div>`; })()}</div>
+      <div class="card"><h2 class="h3">Con đường kể chuyện hôm nay</h2>${(()=>{ const s=D.streets[Math.floor(Date.now()/864e5)%D.streets.length]; return `<p style="margin:0 0 6px"><b>Đường ${esc(s.name)}</b> <span class="tag">${esc(s.wards)}</span></p><p class="small" style="margin:0 0 10px">${esc(s.story)}</p><div class="row"><button class="btn sm" data-street="${s.id}">Xem trên bản đồ</button><button class="btn sm ghost" data-say="${s.id}">${ICON.speaker.replace('<svg','<svg width=16 height=16')} Nghe thuyết minh</button></div>`; })()}</div>
       <div class="grid g2 quick">
         ${[['map','Bản đồ khám phá','Tìm địa điểm, giá vé, giờ mở cửa','#D5EAF8',ICON.map],['trip','Lịch trình của tôi','Sắp xếp điểm đến theo thứ tự','#D6E9F8',ICON.trip],['collection','Bộ sưu tập','Dấu mộc & huy hiệu','#FFF1C1',ICON.coll],['profile','Phong cách du lịch','Xem kết quả phân tích','#F0E8FB',ICON.user]]
           .map(([k,t,d,c,i])=>`<a href="#${k}"><div class="card"><div class="ico" style="background:${c}">${i}</div><div><b>${t}</b><div class="small muted">${d}</div></div></div></a>`).join('')}
@@ -222,7 +222,6 @@ PV.TILES = [
   // Esri first: works without an API key even when the page is opened as a local file (CARTO now answers "API KEY REQUIRED" there)
   {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', o:{maxZoom:19, attribution:'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'}},
   {url:'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', o:{subdomains:'abc', maxZoom:19, attribution:'&copy; OpenStreetMap contributors, Humanitarian OSM Team'}},
-  {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', o:{maxZoom:19, attribution:'&copy; OpenStreetMap contributors'}},
   {url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', o:{subdomains:'abcd', maxZoom:20, attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}}
 ];
 PV.baseLayer = (mp) => {
@@ -283,7 +282,8 @@ PV.views.map = (m) => {
         <div class="seg"><button data-mode="rec" class="${onlyRec?'on':''}">✨ Gợi ý cho bạn</button><button data-mode="all" class="${onlyRec?'':'on'}">Tất cả</button></div>
         <div class="lg">${Object.entries(CATS).filter(([k])=>D.places.some(p=>PV.mainCat(p)===k)).map(([k,c])=>`<span><i style="background:${c.color}"></i>${c.name.split(' –')[0]}</span>`).join('')}<span><i class="tripdot"></i>Lịch trình</span></div>
       </div>
-      <div style="position:absolute;right:12px;top:12px;z-index:500;display:flex;flex-direction:column;gap:8px">
+      <div class="mapctl" id="mapctl" style="position:absolute;right:12px;top:12px;z-index:500;display:flex;flex-direction:column;gap:8px">
+        <button class="btn sm mapctl-btn" id="mapCtlBtn" type="button" aria-expanded="false" aria-controls="mapctl">☰ ${PV.L('Tùy chọn','Options')}</button>
         <button class="btn sm" id="togglePanel" aria-expanded="${!PV.store.get('mapPanelHidden', false)}">${PV.store.get('mapPanelHidden', false) ? '☰ Hiện bộ lọc' : '⟨ Ẩn bộ lọc'}</button>
         <button class="btn sm ghost" id="gps" title="Về vị trí của tôi">${ICON.locate.replace('<svg','<svg width=18 height=18')} Vị trí của tôi</button>
         <button class="btn sm ghost" id="showtrip">${ICON.trip.replace('<svg','<svg width=18 height=18')} Lịch trình</button>
@@ -292,9 +292,11 @@ PV.views.map = (m) => {
   if (!window.L){ $('#map').innerHTML = `<div class="empty">${PV.L('Đang tải bản đồ…','Loading the map…')}</div>`;
     PV.loadLeaflet().then(() => { if (location.hash === '#map') PV.route(); }).catch(() => { const e = $('#map'); if (e) e.innerHTML = `<div class="empty">${PV.L('Không tải được thư viện bản đồ. Hãy kiểm tra kết nối Internet.','Could not load the map library. Please check your connection.')}</div>`; });
     return; }
-  const mv = PV._mapView; map = L.map('map', {zoomControl:true}).setView(mv ? mv.c : [10.7795, 106.6935], mv ? mv.z : 15); PV._mapRef = map;
+  const mv = PV._mapView; map = L.map('map', {zoomControl:true, maxZoom:19}).setView(mv ? mv.c : [10.7795, 106.6935], mv ? mv.z : 15); PV._mapRef = map;
   map.on('moveend', () => { try { const c=map.getCenter(); PV._mapView = {c:[c.lat,c.lng], z:map.getZoom()}; } catch(e){} });
   PV.baseLayer(map);
+  const mc = $('#mapCtlBtn'); if (mc) mc.onclick = () => { const o = $('#mapctl').classList.toggle('open'); mc.setAttribute('aria-expanded', o); mc.innerHTML = o ? '✕ ' + PV.L('Đóng','Close') : '☰ ' + PV.L('Tùy chọn','Options'); };
+  $$('#mapctl > button:not(#mapCtlBtn)').forEach(b => b.addEventListener('click', () => { if (innerWidth <= 820 && b.id !== 'mapStyleBtn'){ $('#mapctl').classList.remove('open'); if (mc) mc.innerHTML = '☰ ' + PV.L('Tùy chọn','Options'); } }));
   layer = L.layerGroup().addTo(map); tripLayer = L.layerGroup().addTo(map); streetLayer = L.layerGroup().addTo(map);
   drawPlaces(); PV.refreshMapTrip();
   map.on('zoomend', () => PV.refreshMapTrip());
@@ -344,8 +346,10 @@ function drawPlaces(){
   if (og) L.marker([og.c[1], og.c[0]], {zIndexOffset:900, icon:L.divIcon({className:'', iconSize:[34,34], iconAnchor:[8,30], html:'<div class="startflag">🚩</div>'})}).addTo(layer).bindTooltip(PV.L('Điểm xuất phát: ','Start: ') + esc(og.name));
   const inTrip = new Set(state.trip.stops.map(s=>s.id));
   const list = D.places.filter(visible);
+  const group = L.markerClusterGroup ? L.markerClusterGroup({maxClusterRadius: z => z >= 16 ? 30 : 48, disableClusteringAtZoom: 17, showCoverageOnHover:false, spiderfyOnMaxZoom:true,
+      iconCreateFunction: c => { const n = c.getChildCount(), s = n < 10 ? 34 : n < 30 ? 40 : 46; return L.divIcon({className:'pv-cluster', iconSize:[s,s], html:`<span style="width:${s}px;height:${s}px">${n}</span>`}); }}).addTo(layer) : layer;
   list.forEach(p => { if (inTrip.has(p.id)) return;
-    L.marker([p.coords[1], p.coords[0]], {icon:pinIcon(p), title:p.name}).addTo(layer)
+    L.marker([p.coords[1], p.coords[0]], {icon:pinIcon(p), title:p.name}).addTo(group)
      .bindTooltip(esc(p.name), {direction:'top', offset:[0,-26]}).on('click', ()=>PV.openPlace(p.id,{noMap:true})); });
   const sorted = list.slice().sort((a,b)=> PV.score(b)-PV.score(a));
   const lim = innerWidth <= 820 && !PV._listAll ? 10 : 40;

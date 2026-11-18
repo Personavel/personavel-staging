@@ -7,7 +7,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 P = lambda *a: os.path.join(HERE, *a)
 WEB = len(sys.argv) > 1 and sys.argv[1] == 'web'
 APP = ['app1.js', 'app2.js', 'i18n.js', 'app3.js', 'coll.js', 'theme.js', 'moments.js', 'community.js', 'reviews.js', 'visited.js',
-       'weather.js', 'tips.js', 'nlu.js', 'traffic.js', 'tripplus.js', 'nav.js', 'mapstyle.js', 'fun.js', 'gestures.js', 'appreview.js', 'app4.js']
+       'weather.js', 'tips.js', 'nlu.js', 'traffic.js', 'tripplus.js', 'nav.js', 'mapstyle.js', 'fun.js', 'gestures.js', 'appreview.js', 'ux.js', 'app4.js']
 rd = lambda f: open(f, encoding='utf-8').read()
 FONTS = 'https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Dancing+Script:wght@600;700&family=Faustina:wght@400;600;700&display=swap&subset=vietnamese'
 TITLE = 'Personavel – Bản đồ du lịch tự túc TP.HCM'
@@ -35,7 +35,7 @@ def head(extra=''):
 
 if not WEB:
     # ---------- single offline file ----------
-    css = rd(P('vendor', 'leaflet.css')) + '\n' + rd(P('style.css')) + '\n' + rd(P('font_brush.css'))
+    css = rd(P('vendor', 'leaflet.css')) + '\n' + rd(P('vendor', 'MarkerCluster.css')) + '\n' + rd(P('style.css')) + '\n' + rd(P('font_brush.css'))
     js = '\n'.join(rd(P(f)) for f in ['imgs_desk.js', 'data.js'] + APP)
     html = f'''<!DOCTYPE html>
 <html lang="vi">
@@ -46,6 +46,7 @@ if not WEB:
 </style>
 <script>
 {rd(P('vendor', 'leaflet.js'))}
+{rd(P('vendor', 'leaflet.markercluster.js'))}
 </script>
 </head>
 <body>
@@ -78,8 +79,8 @@ def font_files(css):
 app_css = emit('app', 'css', minify(rd(P('style.css')) + '\n' + font_files(rd(P('font_brush.css'))), 'css'))
 data_js = emit('data', 'js', minify(rd(P('imgs_web.js')) + '\n' + rd(P('data.js')), 'js'))
 app_js = emit('app', 'js', minify('\n'.join(rd(P(f)) for f in APP), 'js'))
-lf_css = emit('leaflet', 'css', minify(rd(P('vendor', 'leaflet.css')), 'css'))
-lf_js = emit('leaflet', 'js', rd(P('vendor', 'leaflet.js')))
+lf_css = emit('leaflet', 'css', minify(rd(P('vendor', 'leaflet.css')) + '\n' + rd(P('vendor', 'MarkerCluster.css')), 'css'))
+lf_js = emit('leaflet', 'js', rd(P('vendor', 'leaflet.js')) + '\n' + rd(P('vendor', 'leaflet.markercluster.js')))
 for f in ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'og.jpg']:
     if os.path.exists(P('static', f)): shutil.copy(P('static', f), os.path.join(A, f))
 

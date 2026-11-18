@@ -52,7 +52,7 @@ PV.runQuiz = (container, done) => {
     $('#qskip',container).onclick = () => done(false);
   };
   const finish = () => {
-    const p = state.profile || {name:'bạn', joined:new Date().toLocaleDateString('vi-VN')};
+    const p = state.profile || {name:PV.L('Du khách','Traveller'), joined:new Date().toLocaleDateString('vi-VN')};
     const W = [].concat(ans.with||[]), L = ans.likes||[];
     const F = ans.food||[]; ans.diet = F.filter(x => ['veg','nospicy','other'].includes(x)); if (!ans.diet.length) ans.diet = ['none'];
     ans.diet_other = ans.food_other || '';
@@ -74,8 +74,8 @@ PV.views.profile = (m) => {
   m.innerHTML = `<h1 class="title">Trang cá nhân</h1><p class="sub">Personavel ghi nhớ bạn là ai, bạn đã khám phá những gì và phong cách du lịch của bạn thay đổi ra sao.</p>
   <div class="grid g2">
    <div class="card"><div class="row" style="gap:16px"><div class="avatar" id="av">${PV.safeImg(p.avatar)?`<img src="${esc(PV.safeImg(p.avatar))}" alt="">`:esc((p.name||'B')[0].toUpperCase())}</div>
-     <div style="flex:1;min-width:0"><h2 class="pname"><span>${esc(p.name)}</span><button class="pedit-ic" id="pedit" aria-label="Chỉnh sửa hồ sơ" title="Chỉnh sửa hồ sơ"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button></h2><div class="small muted">Tham gia ${esc(p.joined||'')}</div><div class="row" style="margin-top:8px"><button class="btn sm ghost" id="pset">${ICON.gear.replace('<svg','<svg width=14 height=14')} Cài đặt</button><button class="btn sm ghost" id="plogout" style="color:#B54848">Đăng xuất</button></div></div></div>
-     <div class="grid g3 keep" style="margin-top:16px"><button type="button" class="stat stat-link" data-act="visited" aria-label="Xem danh sách địa điểm đã đi"><b>${Object.keys(state.visited).length}</b><span class="tiny muted">địa điểm ›</span></button><div class="stat"><b>${state.points}</b><span class="tiny muted">điểm</span></div><div class="stat"><b>${PV.badges().filter(b=>b.got).length}</b><span class="tiny muted">huy hiệu</span></div></div></div>
+     <div style="flex:1;min-width:0"><h2 class="pname"><span>${esc(p.name)}</span><button class="pedit-ic" id="pedit" aria-label="Chỉnh sửa hồ sơ" title="Chỉnh sửa hồ sơ"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button></h2><div class="small muted">${PV.L('Tham gia ','Joined ')}${esc(p.joined||'')}</div><div class="row" style="margin-top:8px"><button class="btn sm ghost" id="pset">${ICON.gear.replace('<svg','<svg width=14 height=14')} Cài đặt</button><button class="btn sm ghost" id="plogout" style="color:#B54848">Đăng xuất</button></div></div></div>
+     <div class="grid g3 keep" style="margin-top:16px"><button type="button" class="stat stat-link" data-act="visited" title="${PV.L('Xem danh sách','See the list')}"><b>${Object.keys(state.visited).length}</b><span class="tiny muted">địa điểm ›</span></button><div class="stat"><b>${state.points}</b><span class="tiny muted">điểm</span></div><div class="stat"><b>${PV.badges().filter(b=>b.got).length}</b><span class="tiny muted">huy hiệu</span></div></div></div>
    <div class="card"><h3>Phân tích phong cách du lịch</h3>
      ${pr ? `<div class="row" style="gap:12px;align-items:flex-start"><div style="font-size:42px">${per.e}</div><div><b style="font-size:18px">${esc(per.name)}</b><p class="small" style="margin:4px 0">${esc(per.d)}</p></div></div>
      ${Object.entries(CATS).map(([k,c])=>`<div class="prefbar"><span>${c.emoji} ${c.name.split(' –')[0]}</span><div class="bar"><i style="width:${Math.round(w[k]/maxW*100)}%;background:${c.color}"></i></div><span class="tiny muted">${Math.round(w[k]/maxW*100)}%</span></div>`).join('')}
@@ -146,7 +146,7 @@ PV.login = (key) => {
 };
 PV.forgetAccount = (key) => { const accs = PV.accounts(); delete accs[key]; PV.store.set('accounts', accs); };
 PV.logoutModal = () => {
-  const p = state.profile || {name:'bạn'};
+  const p = state.profile || {name:PV.L('Du khách','Traveller')};
   const n = {v:Object.keys(state.visited).length, d:state.diaries.length, t:state.trip.stops.length};
   PV.modal(`<div class="row" style="flex-wrap:nowrap;align-items:flex-start">${PV.robot(PV.GUIDES[0],{wave:false}).replace('<svg','<svg style="width:64px;flex:0 0 64px"')}
      <div><h3 style="margin:0 0 4px">Đăng xuất khỏi Personavel?</h3><p class="small muted" style="margin:0">Sau khi đăng xuất, website quay về màn hình chào để <b>người dùng mới</b> bắt đầu từ đầu: nhập tên, làm bài phân tích phong cách và xem hướng dẫn sử dụng.</p></div></div>
@@ -167,7 +167,7 @@ PV.greetNew = () => {
   const pop = document.createElement('div'); pop.className = 'greetpop'; pop.id = 'greetpop'; pop.setAttribute('role','dialog');
   pop.innerHTML = `<button class="gp-x" aria-label="Đóng">✕</button>
     <div class="row" style="flex-wrap:nowrap;align-items:flex-end;gap:10px">${PV.robot(g).replace('<svg','<svg class="gp-bot"')}
-    <div class="bubble gp-b"><b>Xin chào ${esc(p.name||'bạn')}!</b> Mình là <b>${g.name}</b> – hướng dẫn viên của bạn hôm nay.
+    <div class="bubble gp-b"><b>Xin chào ${esc(p.name||PV.L('Du khách','Traveller'))}!</b> Mình là <b>${g.name}</b> – hướng dẫn viên của bạn hôm nay.
     ${per ? `<div style="margin-top:6px">Phong cách của bạn: <b>${per.e} ${esc(per.name)}</b>.</div>` : ''}
     <div style="margin-top:6px">Mình gợi ý bạn bắt đầu với: ${rec.map(x=>`<a href="#" class="gp-place" data-gp="${x.id}">${esc(x.name)}</a>`).join(', ')}.</div>
     <div style="margin-top:6px">Bạn muốn mình giúp gì trước?</div></div></div>
@@ -211,6 +211,7 @@ PV.views.chat = (m) => {
       <div class="sugg" id="sugg">${['🗺️ Lên lịch trình 1 ngày','🍜 Gợi ý quán ăn ngon gần đây','🏛️ Kể chuyện về Dinh Độc Lập','🛣️ Đường Nguyễn Huệ có ý nghĩa gì?','🌙 Đi chơi buổi tối ở đâu?','🎁 Mua quà lưu niệm ở đâu?'].map(s=>`<button class="chip">${s}</button>`).join('')}</div>
       <form class="composer" id="cf"><input class="input" id="ci" placeholder="Hỏi ${g.name} bất cứ điều gì về Sài Gòn…" autocomplete="off"><button class="btn" aria-label="Gửi">${ICON.send.replace('<svg','<svg width=18 height=18')}</button></form></div>
   </div>`;
+  { const gr = $('.guides', m); const hint = () => gr.classList.toggle('more-r', gr.scrollWidth - gr.scrollLeft - gr.clientWidth > 8); gr.addEventListener('scroll', hint, {passive:true}); requestAnimationFrame(hint); addEventListener('resize', hint, {passive:true}); }
   $$('.guide',m).forEach(el => el.onclick = () => { state.settings.guide = el.dataset.g; PV.save('settings'); const ng=PV.todayGuide(); state.chat.push({r:'bot', t:PV.L(ng.greet, PV.tr(ng.greet)), g:ng.id}); PV.save('chat'); PV.views.chat(m); });
   $('#cclear').onclick = () => { state.chat=[]; PV.save('chat'); PV.views.chat(m); };
   const cs=$('#cset'); if (cs) cs.onclick = e => { e.preventDefault(); PV.settingsModal(); };
@@ -445,7 +446,7 @@ PV.checkBadges = () => {
 };
 PV.celebrate = (list) => {
   const old = document.getElementById('celebrate'); if (old) old.remove();
-  const g = PV.todayGuide(); const name = state.profile?.name || PV.L('bạn','friend');
+  const g = PV.todayGuide(); const name = state.profile?.name || PV.L('Du khách','Traveller');
   const all = PV.badges(); const done = all.filter(b=>b.got).length;
   const next = all.filter(b=>!b.got).sort((a,b)=>(b.cur/b.max)-(a.cur/a.max))[0];
   const bn = b => `${b.e} <b>${esc(PV.tr(b.name))}</b>`;

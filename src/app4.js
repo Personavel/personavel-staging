@@ -46,7 +46,7 @@ PV.welcome = (force) => {
   PV.introSwap(ov, 2250, !returning);
   if (!returning) PV.animateIntroBot(ov);
   const close = () => { ov.style.transition='opacity .5s'; ov.style.opacity='0'; setTimeout(()=>ov.remove(),500); };
-  $('#wskip',ov).onclick = (e) => { e.stopPropagation(); if (!state.profile){ state.profile={name:'bạn', joined:new Date().toLocaleDateString('vi-VN'), onboarded:true}; PV.save('profile'); } close(); PV.route(); };
+  $('#wskip',ov).onclick = (e) => { e.stopPropagation(); if (!state.profile){ state.profile={name:PV.L('Du khách','Traveller'), joined:new Date().toLocaleDateString('vi-VN'), onboarded:true}; PV.save('profile'); } close(); PV.route(); };
   if (returning){ ov.onclick = (e) => { if (!(e.target.closest && e.target.closest('.langsw'))) close(); }; setTimeout(close, Math.round((2.25 + 0.14*p.name.length + 0.05*PV.L('Chào mừng bạn trở lại!','Welcome back!').length + 1.4)*1000)); return; }
   let stepped = false;
   const next = () => { if (stepped) return; stepped = true; PV.intro(ov, close); };
@@ -120,7 +120,7 @@ PV.intro = (ov, close) => {
       ${(()=>{ const accs=PV.accounts(); const ks=Object.keys(accs); return ks.length ? `<div style="margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)"><b class="small">Hoặc tiếp tục với tài khoản đã lưu trên máy này</b><div class="grid" style="gap:8px;margin-top:8px">${ks.map(k=>`<div class="pitem" style="align-items:center"><div class="avatar" style="width:36px;height:36px;font-size:15px;border-width:2px">${PV.safeImg(accs[k].avatar)?`<img src="${esc(PV.safeImg(accs[k].avatar))}" alt="">`:esc(accs[k].name[0].toUpperCase())}</div><div style="flex:1;min-width:0"><b>${esc(accs[k].name)}</b><div class="tiny muted">${esc(accs[k].persona||'')}${accs[k].persona?' · ':''}lưu lúc ${esc(accs[k].savedAt)}</div></div><button class="btn sm" data-acc="${k}">Tiếp tục</button></div>`).join('')}</div></div>` : ''; })()}`;
     $('#nm',box).focus();
     $$('[data-acc]',box).forEach(bt => bt.onclick = (e) => { e.stopPropagation(); PV.login(bt.dataset.acc); close(); location.hash='#home'; PV.route(); PV.toast('Chào mừng '+state.profile.name+' quay lại!'); });
-    $('#nf',box).onsubmit = (e) => { e.preventDefault(); const name = $('#nm',box).value.trim() || 'bạn';
+    $('#nf',box).onsubmit = (e) => { e.preventDefault(); const name = $('#nm',box).value.trim() || PV.L('Du khách','Traveller');
       state.profile = Object.assign(state.profile||{}, {name, joined: state.profile?.joined || new Date().toLocaleDateString('vi-VN')});
       if ($('#rem',box).checked) PV.save('profile'); quizIntro(name); };
   };
@@ -192,8 +192,8 @@ PV.langGate = (next) => {
   ov.querySelectorAll('.lg-opt').forEach(b => b.onclick = () => {
     state.settings.langChosen = true; PV.save('settings');
     if (PV.lang !== b.dataset.l) PV.setLang(b.dataset.l); else PV.save('settings');
-    b.classList.add('picked'); ov.classList.add('out');
-    setTimeout(() => { ov.remove(); next(); }, 380);
+    b.classList.add('picked'); ov.classList.add('out'); ov.style.pointerEvents = 'none';
+    setTimeout(() => { ov.remove(); next(); }, 220);
   });
 };
 PV.init = () => {
@@ -208,7 +208,7 @@ PV.init = () => {
     if (!state.settings.langChosen && state.settings.theme && state.settings.theme.id !== 'default'){ state.settings.theme = {id:'default'}; PV.save('settings'); PV.applyTheme && PV.applyTheme({id:'default'}); }
     PV.langGate(() => PV.welcome());
   }
-  else PV.welcome(false);
+  else if (!state.settings.splashSeen){ state.settings.splashSeen = true; PV.save('settings'); PV.welcome(false); }   // the intro plays once; afterwards (and for deep links) open the page directly
   if ('speechSynthesis' in window) speechSynthesis.getVoices();
 };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', PV.init); else PV.init();

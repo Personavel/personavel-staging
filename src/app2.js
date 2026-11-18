@@ -199,7 +199,7 @@ PV.openPlace = (id, opt={}) => {
   $('#d-trip', dr).onclick = () => { if (!inTrip){ PV.addToTrip(id,'me'); PV.openPlace(id,opt); } };
   $('#d-visit', dr).onclick = () => { PV.markVisited(id); PV.openPlace(id,opt); };
   $('#d-say', dr).onclick = (e) => PV.narrate(p, e.currentTarget);
-  const mb = $('#d-map', dr); if (mb) mb.onclick = () => { PV.pendingPlace = id; if (location.hash==='#map') PV.focusPlace(id); else location.hash = '#map'; PV.closeDrawer(); };
+  const mb = $('#d-map', dr); if (mb) mb.onclick = () => { PV.pendingPlace = id; if (location.hash.split('?')[0]==='#map') PV.focusPlace(id); else location.hash = '#map'; PV.closeDrawer(); };
 };
 PV.closeDrawer = () => { const d=$('#drawer'); if (d){ d.classList.remove('open'); d.setAttribute('aria-hidden','true'); } };
 PV.addToTrip = (id, by='me') => {
@@ -290,7 +290,7 @@ PV.views.map = (m) => {
       </div></div>
   </div>`;
   if (!window.L){ $('#map').innerHTML = `<div class="empty">${PV.L('Đang tải bản đồ…','Loading the map…')}</div>`;
-    PV.loadLeaflet().then(() => { if (location.hash === '#map') PV.route(); }).catch(() => { const e = $('#map'); if (e) e.innerHTML = `<div class="empty">${PV.L('Không tải được thư viện bản đồ. Hãy kiểm tra kết nối Internet.','Could not load the map library. Please check your connection.')}</div>`; });
+    PV.loadLeaflet().then(() => { if (location.hash.split('?')[0] === '#map') PV.route(); }).catch(() => { const e = $('#map'); if (e) e.innerHTML = `<div class="empty">${PV.L('Không tải được thư viện bản đồ. Hãy kiểm tra kết nối Internet.','Could not load the map library. Please check your connection.')}</div>`; });
     return; }
   const mv = PV._mapView; map = L.map('map', {zoomControl:true, maxZoom:19}).setView(mv ? mv.c : [10.7795, 106.6935], mv ? mv.z : 15); PV._mapRef = map;
   map.on('moveend', () => { try { const c=map.getCenter(); PV._mapView = {c:[c.lat,c.lng], z:map.getZoom()}; } catch(e){} });
@@ -326,6 +326,7 @@ PV.views.map = (m) => {
 };
 function visible(p){
   if (!p.coords) return false;
+  if (PV.areaOk && !PV.areaOk(p)) return false;   // area filter (areas.js)
   if (!p.cats.some(c=>active.has(c))) return false;
   if (budgetMax<3 && p.price_level!=null && p.price_level>budgetMax) return false;
   if (budgetMax<3 && p.price_level==null) return false;
@@ -339,6 +340,7 @@ function pinIcon(p){
   return L.divIcon({className:'', iconSize:[s,s], iconAnchor:[s/2,s], popupAnchor:[0,-s+2],
     html:`<div class="pin" style="width:${s}px;height:${s}px;border-width:${bw}px;background:${c.color};${state.visited[p.id]?'outline:'+(s<18?2:3)+'px solid #1F4E79;':''}">${s>=18?`<span style="font-size:${fs}px">${c.emoji}</span>`:''}</div>`});
 }
+PV.mapRedraw = () => drawPlaces();
 function drawPlaces(){
   if (!map) return; layer.clearLayers();
   TOP = new Set(D.places.filter(p => p.coords && p.cats.some(c=>active.has(c)) && !(budgetMax<3 && (p.price_level==null || p.price_level>budgetMax))).map(p=>({p, s:PV.score(p)})).sort((a,b)=>b.s-a.s).slice(0,TOPN).map(x=>x.p.id));

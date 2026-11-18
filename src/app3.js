@@ -254,8 +254,8 @@ PV.chatCore = (root) => {
     msgs.insertAdjacentHTML('beforeend', bubble(res)); bindCards(msgs); msgs.scrollTop=msgs.scrollHeight;
   }
   function bindCards(r){
-    $$('[data-pid]', r).forEach(el => el.onclick = () => { if (PV._mapRef && PV.focusPlace && location.hash==='#map') PV.focusPlace(el.dataset.pid); else PV.openPlace(el.dataset.pid); });
-    $$('[data-usetrip]', r).forEach(b => b.onclick = () => { const c = state.chat[+b.dataset.usetrip]; if (!c||!c.trip) return; state.trip = JSON.parse(JSON.stringify(c.trip)); state.trip.stops.forEach(s=>s.by='ai'); PV.retime(state.trip); PV.save('trip'); PV.toast('Đã lưu lịch trình'); if (location.hash==='#map' && PV.refreshMapTrip) PV.refreshMapTrip(); else location.hash='#trip'; });
+    $$('[data-pid]', r).forEach(el => el.onclick = () => { if (PV._mapRef && PV.focusPlace && location.hash.split('?')[0]==='#map') PV.focusPlace(el.dataset.pid); else PV.openPlace(el.dataset.pid); });
+    $$('[data-usetrip]', r).forEach(b => b.onclick = () => { const c = state.chat[+b.dataset.usetrip]; if (!c||!c.trip) return; state.trip = JSON.parse(JSON.stringify(c.trip)); state.trip.stops.forEach(s=>s.by='ai'); PV.retime(state.trip); PV.save('trip'); PV.toast('Đã lưu lịch trình'); if (location.hash.split('?')[0]==='#map' && PV.refreshMapTrip) PV.refreshMapTrip(); else location.hash='#trip'; });
     $$('[data-adjust]', r).forEach(b => b.onclick = () => { ci.value='Mình muốn điều chỉnh: '; ci.focus(); });
     $$('[data-say2]', r).forEach(b => b.onclick = () => { const c=state.chat[+b.dataset.say2]; if (c) PV.speak(c.t.replace(/[*_#>]/g,''), b); });
     $$('[data-askg]', r).forEach(b => b.onclick = () => { const c=state.chat[+b.dataset.askq]; if (PV.switchGuide) PV.switchGuide(b.dataset.askg, c && c.ask && c.ask.q, root); });

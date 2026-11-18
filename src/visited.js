@@ -54,7 +54,7 @@ PV.visitedSheet = () => {
     const body = $('#vsBody', bg);
     const bindList = () => {
       $$('[data-open]', bg).forEach(b => b.onclick = () => { close(); PV.openPlace(b.dataset.open); });
-      $$('[data-map]', bg).forEach(b => b.onclick = () => { close(); PV.pendingPlace = b.dataset.map; if (location.hash === '#map' && PV.focusPlace) PV.focusPlace(b.dataset.map); else location.hash = '#map'; });
+      $$('[data-map]', bg).forEach(b => b.onclick = () => { close(); PV.pendingPlace = b.dataset.map; if (location.hash.split('?')[0] === '#map' && PV.focusPlace) PV.focusPlace(b.dataset.map); else location.hash = '#map'; });
     };
     $$('.vs-chips .chip', bg).forEach(c => c.onclick = () => { filter = c.dataset.f; $$('.vs-chips .chip', bg).forEach(x => x.classList.toggle('on', x === c)); body.innerHTML = list(); bindList(); });
     const s = $('#vsQ', bg); if (s) s.oninput = () => { q = s.value; body.innerHTML = list(); bindList(); };

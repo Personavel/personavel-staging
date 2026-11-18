@@ -31,6 +31,7 @@ Bản đồ du lịch tự túc TP.HCM của nhóm 11A13, THPT Lê Quý Đôn. W
 | `src/account.js` | hộp đăng nhập (Google, email), `#reset-password`, `#account`, avatar/tên từ `pv_me()` |
 | `src/content.js` | Nội dung của tôi (`pv_my_content`), sửa/xóa đánh giá và bài viết, bài viết ở trang địa điểm (`pv_list_posts`) |
 | `src/admin.js` | hộp “⚑ Báo cáo” (`pv_report`), trang `#admin` 4 tab (chỉ hiện khi `role = 'admin'`) |
+| `src/areas.js` | bộ lọc khu vực (phường mới + quận cũ) cho Bản đồ và Bộ sưu tập, đọc `data/areas.json`, lưu trong URL `#map?area=…` |
 | `src/guides.js` | phạm vi từng trợ lý (`PV.routeChat`), phiên chat riêng mỗi trợ lý – test: `node tests/chat-routing.test.js` |
 | `src/theme.js`, `style.css` | nền, màu chữ, giao diện |
 | `src/imgs*.js` | ảnh gốc (base64) – `gen_imgs.py` tạo `imgs_desk.js`, `imgs_web.js` và thư mục `img/` |

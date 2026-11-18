@@ -7,12 +7,13 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 P = lambda *a: os.path.join(HERE, *a)
 WEB = len(sys.argv) > 1 and sys.argv[1] == 'web'
 APP = ['app1.js', 'app2.js', 'i18n.js', 'app3.js', 'coll.js', 'theme.js', 'moments.js', 'community.js', 'reviews.js', 'visited.js',
-       'weather.js', 'tips.js', 'nlu.js', 'traffic.js', 'tripplus.js', 'nav.js', 'mapstyle.js', 'fun.js', 'gestures.js', 'appreview.js', 'ux.js', 'badges.js', 'guides.js', 'routes.js', 'cloud.js', 'account.js', 'content.js', 'admin.js', 'app4.js']
+       'weather.js', 'tips.js', 'nlu.js', 'traffic.js', 'tripplus.js', 'nav.js', 'mapstyle.js', 'fun.js', 'gestures.js', 'appreview.js', 'ux.js', 'badges.js', 'guides.js', 'routes.js', 'cloud.js', 'account.js', 'content.js', 'admin.js', 'areas.js', 'app4.js']
 rd = lambda f: open(f, encoding='utf-8').read()
 FONTS = 'https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Dancing+Script:wght@600;700&family=Faustina:wght@400;600;700&display=swap&subset=vietnamese'
 TITLE = 'Personavel – Bản đồ du lịch tự túc TP.HCM'
 DESC = 'Personavel – nền tảng bản đồ du lịch tự túc, thuyết minh và gợi ý lịch trình cá nhân hóa tại TP.HCM. Dự án của nhóm 11A13, THPT Lê Quý Đôn.'
 SITE = 'https://personavel.github.io/'
+AREAS_JSON = os.path.join(ROOT, 'data', 'areas.json')   # from the data team; no file → no area filter
 SUPABASE_JS = 'supabase-js-2.119.1.js'   # pinned; update the file name here when upgrading
 
 def minify(code, loader):
@@ -52,6 +53,7 @@ if not WEB:
 <script>
 {rd(P('vendor', SUPABASE_JS))}
 </script>
+{('<script>window.PV_AREAS=' + json.dumps(json.load(open(AREAS_JSON, encoding='utf-8')), ensure_ascii=False, separators=(',', ':')) + ';</script>') if os.path.exists(AREAS_JSON) else ''}
 </head>
 <body>
 <script>
@@ -162,8 +164,8 @@ json.dump({"name": "Personavel – Bản đồ du lịch tự túc TP.HCM", "sho
                      {"src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png"},
                      {"src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]},
           open(os.path.join(ROOT, 'manifest.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-ver = hashlib.sha256((app_js + app_css + data_js + lf_js).encode()).hexdigest()[:10]
-shell = ['./', 'index.html', app_css, data_js, app_js, lf_css, lf_js, 'manifest.json', 'assets/icon-192.png']
+ver = hashlib.sha256((app_js + app_css + data_js + lf_js + (rd(AREAS_JSON) if os.path.exists(AREAS_JSON) else '')).encode()).hexdigest()[:10]
+shell = ['./', 'index.html', app_css, data_js, app_js, lf_css, lf_js, 'manifest.json', 'assets/icon-192.png'] + (['data/areas.json'] if os.path.exists(AREAS_JSON) else [])
 KILL = '--kill-sw' in sys.argv
 if KILL:
     # emergency: a service worker that deletes every cache, unregisters itself and reloads open tabs from the network

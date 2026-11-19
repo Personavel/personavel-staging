@@ -1614,7 +1614,7 @@ body.glass-dark .bm-how{background:rgba(255,255,255,.06);border-color:rgba(255,2
 .rt-err{margin-top:8px;padding:10px 12px;border-radius:12px;background:#FFF6E0;border:1px solid #F0D38A;color:#6B4A00;font-size:13px;line-height:1.45;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .rt-foot{margin:8px 0 0}.rt-attr a{color:inherit}
 @media (max-width:420px){ .rt-legs button{grid-template-columns:24px 1fr;} .rt-v{grid-column:2} .rt-total{margin-left:0;width:100%} }
-body.glass-dark .rt-legs button{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:var(--ink-l)}
+body.glass-dark .rt-legs button{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:var(--ink)}
 
 /* ===== account: login box, account page ===== */
 .au-bg .modal{width:min(420px,100%);position:relative}
@@ -1670,7 +1670,7 @@ body.glass-dark .acc-strip{background:rgba(255,255,255,.06);border-color:rgba(25
 .po-body{margin:4px 0;font-size:14px;line-height:1.5;white-space:pre-line}
 .cf-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .po-bg .modal{width:min(560px,100%)}
-body.glass-dark .mc-item,body.glass-dark .mc-f button{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink-l)}
+body.glass-dark .mc-item,body.glass-dark .mc-f button{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink)}
 
 /* ===== report box & admin ===== */
 .rp-reasons{border:0;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:4px}
@@ -1691,7 +1691,7 @@ body.glass-dark .mc-item,body.glass-dark .mc-f button{background:rgba(255,255,25
 .ad-ph.done{opacity:.6}
 .ad-log{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}.ad-id{font-family:monospace}
 @media (max-width:420px){ .ad-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
-body.glass-dark :is(.ad-item,.ad-ph,.ad-tabs button,.rp-r){background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink-l)}
+body.glass-dark :is(.ad-item,.ad-ph,.ad-tabs button,.rp-r){background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink)}
 
 /* ===== area filter ===== */
 .ar-wrap{display:flex;flex-direction:column;gap:6px;margin:0 0 10px}
@@ -1706,7 +1706,7 @@ body.glass-dark :is(.ad-item,.ad-ph,.ad-tabs button,.rp-r){background:rgba(255,2
 .ar-opt span{display:flex;flex-direction:column;flex:1;min-width:0}.ar-opt small{font-weight:600;color:var(--muted);font-size:12px}
 .ar-opt b{min-width:28px;text-align:center;padding:2px 8px;border-radius:999px;background:#EAF4FD;font-size:12px}
 .ar-opt.on{border-color:#2F6FA3;background:#EAF4FD}
-body.glass-dark :is(.ar-btn,.ar-opt){background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink-l)}
+body.glass-dark :is(.ar-btn,.ar-opt){background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink)}
 
 /* photo tile: signed in → "Add photo", signed out → "Sign in to add photos" */
 .rp-add .rp-out{display:block;font-size:11px;line-height:1.2;text-align:center}.rp-add .rp-in{display:none}
@@ -1733,4 +1733,12 @@ body:not(.pv-in) .rp-add i{display:none}
 .ad-stat.hot{border-color:#E8B730;background:#FFF8E1}.ad-stat.hot b{color:#8A5A00}
 .ad-stat:hover{border-color:#2F6FA3}
 .ad-last{margin:0}
-body.glass-dark .ad-stat{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink-l)}body.glass-dark .ad-stat b{color:var(--ink-l)}
+body.glass-dark .ad-stat{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink)}body.glass-dark .ad-stat b{color:var(--ink)}
+
+/* dark skies: my additions use the light text colour; the map-tile notice is a white box, so it keeps dark text */
+body.glass-dark .ad-stat span,body.glass-dark .ad-stat .ad-ic{color:var(--ink)}
+.tilefail{color:#1F2D4C}.tilefail .small{color:#4A5B78}
+body.glass-dark .ad-content{background:rgba(255,255,255,.08)}
+.tilefail b,.tilefail strong{color:#1F2D4C!important}.tilefail .small{color:#4A5B78!important}
+.tilefail :is(li,div,span,p,small,b,strong){color:#3A4A66!important}.tilefail b{color:#1F2D4C!important}
+body.glass-dark .tilefail .muted,.tilefail .muted{color:#4A5B78!important;opacity:1!important}

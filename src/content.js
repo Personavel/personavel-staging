@@ -8,8 +8,8 @@ const C = PV.cloud;
 const MAXPOST = 4;   // photos per post in the editor (server allows 6)
 const pname = (id) => { const p = PV.byId(id); return p ? PV.L(p.name, p.name_en || p.name) : ''; };
 const when = (t) => { try { return new Date(t).toLocaleDateString(PV.lang === 'en' ? 'en-GB' : 'vi-VN'); } catch(e){ return ''; } };
-const STATUS = (it) => it.status === 'hidden' ? `<span class="st st-hidden">🚫 ${T_('Bị ẩn', 'Hidden')}${it.hidden_reason ? ': ' + esc(it.hidden_reason) : ''}</span>`
-  : it.status === 'pending' ? `<span class="st st-pending">⏳ ${T_('Chờ duyệt ảnh', 'Photos pending')}</span>` : `<span class="st st-public">🌐 ${T_('Công khai', 'Public')}</span>`;
+const STATUS = (it) => it.status === 'hidden' ? `<span class="pvst pvst-hidden">🚫 ${T_('Bị ẩn', 'Hidden')}${it.hidden_reason ? ': ' + esc(it.hidden_reason) : ''}</span>`
+  : it.status === 'pending' ? `<span class="pvst pvst-pending">⏳ ${T_('Chờ duyệt ảnh', 'Photos pending')}</span>` : `<span class="pvst pvst-public">🌐 ${T_('Công khai', 'Public')}</span>`;
 const thumbs = (urls) => (urls || []).filter(u => PV.safeImg(u)).slice(0, 4).map(u => `<img src="${esc(PV.safeImg(u))}" alt="" loading="lazy">`).join('');
 const starsTxt = (n) => n ? '★'.repeat(n) + '☆'.repeat(5 - n) : '';
 /* upload the photos picked on this device ({k}) and return public URLs */

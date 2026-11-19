@@ -1657,8 +1657,8 @@ body.glass-dark .acc-strip{background:rgba(255,255,255,.06);border-color:rgba(25
 .mc-item{border:1px solid #D6E6F4;border-radius:14px;padding:10px 12px;background:#fff}
 .mc-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .mc-type{font-size:12px;font-weight:800;color:#3D7FB8}
-.st{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px}
-.st-public{background:#E8F5EE;color:#1E5E3D}.st-pending{background:#FFF4D6;color:#7A5300}.st-hidden{background:#FDECEC;color:#8A1F1F}
+.pvst{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px}
+.pvst-public{background:#E8F5EE;color:#1E5E3D}.pvst-pending{background:#FFF4D6;color:#7A5300}.pvst-hidden{background:#FDECEC;color:#8A1F1F}
 .mc-title{display:block;margin-top:6px;color:#1F4E79}
 .mc-stars{color:#E8B730;letter-spacing:1px;font-size:14px}
 .mc-body{margin:4px 0;font-size:14px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}

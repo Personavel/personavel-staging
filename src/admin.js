@@ -81,7 +81,7 @@ async function drawReports(el){
   if (!rows.length){ list.innerHTML = `<p class="small muted">${T_('Không có báo cáo nào.', 'No reports.')}</p>`; return; }
   list.innerHTML = rows.map((r, i) => { const c = r.content;
     return `<article class="ad-item">
-      <div class="mc-top"><span class="mc-type">${r.type === 'post' ? '📝 ' + T_('Bài viết', 'Post') : '⭐ ' + T_('Đánh giá', 'Review')}</span><span class="st st-pending">${esc(reasonText(r.reason))}</span>${r.report_count > 1 ? `<span class="st st-hidden">${r.report_count} ${T_('báo cáo', 'reports')}</span>` : ''}${c && c.hidden ? `<span class="st st-hidden">🚫 ${T_('đang ẩn', 'hidden')}</span>` : ''}<span class="spacer"></span><span class="tiny muted">${when(r.created_at)}</span></div>
+      <div class="mc-top"><span class="mc-type">${r.type === 'post' ? '📝 ' + T_('Bài viết', 'Post') : '⭐ ' + T_('Đánh giá', 'Review')}</span><span class="pvst pvst-pending">${esc(reasonText(r.reason))}</span>${r.report_count > 1 ? `<span class="pvst pvst-hidden">${r.report_count} ${T_('báo cáo', 'reports')}</span>` : ''}${c && c.hidden ? `<span class="pvst pvst-hidden">🚫 ${T_('đang ẩn', 'hidden')}</span>` : ''}<span class="spacer"></span><span class="tiny muted">${when(r.created_at)}</span></div>
       <div class="tiny muted">${T_('Người báo cáo', 'Reporter')}: ${esc(r.reporter_name || '?')}${r.note ? ` · “${esc(r.note)}”` : ''}</div>
       ${c ? `<div class="ad-content"><b>${esc(c.title || (c.kind === 'site' ? 'Personavel' : pname(c.target || c.place)))}</b> <span class="tiny muted">— ${esc(c.author || '')}${c.stars ? ' · ' + '★'.repeat(c.stars) : ''}</span>
         ${c.body ? `<p class="mc-body">${esc(c.body)}</p>` : ''}${(c.photos || []).length ? `<div class="mc-ph">${c.photos.filter(u => PV.safeImg(u)).map(u => `<a href="${esc(PV.safeImg(u))}" target="_blank" rel="noopener"><img src="${esc(PV.safeImg(u))}" alt=""></a>`).join('')}</div>` : ''}${c.hidden_reason ? `<div class="tiny">🚫 ${esc(c.hidden_reason)}</div>` : ''}</div>`
@@ -115,7 +115,7 @@ async function drawUsers(el, q = ''){
   let rows; try { rows = await PV.rpc('pv_admin_users', {p_query: q || null}); } catch(e){ return failed(list, e); }
   if (!rows.length){ list.innerHTML = `<p class="small muted">${T_('Không tìm thấy ai.', 'Nobody found.')}</p>`; return; }
   list.innerHTML = rows.map((u, i) => `<article class="ad-item ad-user"><span class="cf-av" style="background:${PV.community.colorOf(u.display_name || '?')}">${PV.safeImg(u.avatar_url) ? `<img src="${esc(PV.safeImg(u.avatar_url))}" alt="">` : esc((u.display_name || '?')[0].toUpperCase())}</span>
-      <div style="min-width:0;flex:1"><b>${esc(u.display_name || '?')}</b> ${u.role === 'admin' ? '<span class="st st-public">admin</span>' : ''}${u.banned ? `<span class="st st-hidden">${T_('bị khóa', 'blocked')}</span>` : ''}
+      <div style="min-width:0;flex:1"><b>${esc(u.display_name || '?')}</b> ${u.role === 'admin' ? '<span class="pvst pvst-public">admin</span>' : ''}${u.banned ? `<span class="pvst pvst-hidden">${T_('bị khóa', 'blocked')}</span>` : ''}
         <div class="tiny muted ad-mail">${esc(u.email || '')}</div><div class="tiny muted">${u.review_count || 0} ${T_('đánh giá', 'reviews')} · ${T_('từ', 'since')} ${when(u.created_at)}</div></div>
       ${u.role === 'admin' ? '' : `<button class="btn ghost sm${u.banned ? '' : ' acc-del'}" data-ban="${i}">${u.banned ? '🔓 ' + T_('Mở khóa', 'Unblock') : '🔒 ' + T_('Khóa đăng bài', 'Block posting')}</button>`}</article>`).join('');
   $$('[data-ban]', list).forEach(b => b.onclick = async () => { const u = rows[+b.dataset.ban]; b.disabled = true;
@@ -128,7 +128,7 @@ async function drawLog(el){
   const list = $('.ad-list', el); loading(list);
   let rows; try { rows = await PV.rpc('pv_admin_log', {p_limit: 50}); } catch(e){ return failed(list, e); }
   if (!rows.length){ list.innerHTML = `<p class="small muted">${T_('Chưa có thao tác nào.', 'No actions yet.')}</p>`; return; }
-  list.innerHTML = `<ol class="ad-log">${rows.map(r => `<li><span class="tiny muted">${when(r.created_at)}</span> <b>${esc(r.admin_name || '?')}</b> · <span class="st st-public">${esc(actText(r.action))}</span> ${esc(r.target_type || '')}${r.reason ? ` · “${esc(r.reason)}”` : ''}<span class="tiny muted ad-id"> ${esc(String(r.target_id || '').slice(0, 8))}</span></li>`).join('')}</ol>`;
+  list.innerHTML = `<ol class="ad-log">${rows.map(r => `<li><span class="tiny muted">${when(r.created_at)}</span> <b>${esc(r.admin_name || '?')}</b> · <span class="pvst pvst-public">${esc(actText(r.action))}</span> ${esc(r.target_type || '')}${r.reason ? ` · “${esc(r.reason)}”` : ''}<span class="tiny muted ad-id"> ${esc(String(r.target_id || '').slice(0, 8))}</span></li>`).join('')}</ol>`;
 }
 
 /* reviews in the community feed: the old one-tap report becomes the report box (with reasons) */

@@ -1713,3 +1713,10 @@ body.glass-dark :is(.ar-btn,.ar-opt){background:rgba(255,255,255,.06);border-col
 body.pv-in .rp-add .rp-out{display:none}body.pv-in .rp-add .rp-in{display:block}
 body:not(.pv-in) .rp-add i{display:none}
 .au-resend{margin-top:6px;font-weight:700}
+
+/* forms: the hidden attribute always wins over display rules (e.g. "Tên hiển thị" in the Sign-in tab) */
+[hidden]{display:none!important}
+/* forms: space between the last field and its button (button touched/overlapped the field) */
+#rpF .btn,.acc-card form>.btn,.acc-card>.btn,.au-go{margin-top:14px}
+#rpF label,.acc-card form label{display:block;margin-top:10px}
+#rpF .input,.acc-card form .input,.au form .input{margin-top:4px}

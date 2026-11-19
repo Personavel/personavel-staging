@@ -118,7 +118,7 @@ boot_css = ('#boot{position:fixed;inset:0;z-index:1;overflow:hidden;background:#
   '#boot-sub{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;opacity:.9}'
   '.boot-bot{width:34px;height:34px;margin-top:10px;border-radius:50%;border:4px solid rgba(255,255,255,.35);border-top-color:#fff;animation:bspin 1s linear infinite}'
   '@keyframes bspin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.boot-bot{animation:none}#boot{transition:none}}')
-# service worker registration: a new version waits until the visitor taps "Reload" (never swapped mid-use);
+# service worker registration: a new version applies itself at a quiet moment (never while typing / in a box / navigating);
 # ?nosw in the address bar removes the service worker and every cache on this device (emergency switch)
 sw_reg = ("(function(){if(!('serviceWorker' in navigator))return;var q=location.search;"
   "if(/[?&]nosw\\b/.test(q)){try{sessionStorage.setItem('pv_nosw','1')}catch(e){}navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))})"
@@ -126,19 +126,23 @@ sw_reg = ("(function(){if(!('serviceWorker' in navigator))return;var q=location.
   ".then(function(){location.replace(location.pathname+location.hash)});return}"
   "try{if(sessionStorage.getItem('pv_nosw'))return}catch(e){}if(location.protocol!=='https:')return;"
   "var en=false;try{en=(JSON.parse(localStorage.getItem('pv_settings'))||{}).lang==='en'}catch(e){}"
-  "var asked=false;function bar(w){if(document.getElementById('pv-upd'))return;var d=document.createElement('div');d.id='pv-upd';d.setAttribute('role','status');"
-  "d.style.cssText='position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99999;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 24px);padding:10px 12px 10px 16px;border-radius:14px;background:#0B3D91;color:#fff;font:600 14px/1.3 Nunito,system-ui,sans-serif;box-shadow:0 8px 24px rgba(11,61,145,.35)';"
-  "d.innerHTML='<span>'+(en?'A new version is available':'Có phiên bản mới')+'</span>';"
-  "var b=document.createElement('button');b.type='button';b.textContent=en?'Reload':'Tải lại';b.style.cssText='border:0;border-radius:10px;padding:8px 14px;background:#fff;color:#0B3D91;font:800 14px Nunito,system-ui,sans-serif;cursor:pointer';"
-  "b.onclick=function(){asked=true;b.disabled=true;w.postMessage('SKIP_WAITING');setTimeout(function(){location.reload()},3000)};"
-  "var x=document.createElement('button');x.type='button';x.setAttribute('aria-label',en?'Later':'Để sau');x.textContent='✕';x.style.cssText='border:0;background:none;color:#CFE3F6;font-size:16px;cursor:pointer;padding:4px';x.onclick=function(){d.remove()};"
-  "d.appendChild(b);d.appendChild(x);document.body.appendChild(d)}"
+  "var asked=false,wait=null;"
+  # a new version applies itself – but never while the visitor is typing, has a box open, is navigating or listening;
+  # in that case it waits for a quiet moment or for the tab to be hidden
+  "function busy(){var a=document.activeElement;return !!(document.querySelector('.modal-bg,#welcome,#navMap,#langgate')||(a&&a.matches&&a.matches('input,textarea,select,[contenteditable=true]'))||(window.speechSynthesis&&speechSynthesis.speaking))}"
+  "function note(){if(document.getElementById('pv-upd'))return;var d=document.createElement('div');d.id='pv-upd';d.setAttribute('role','status');"
+  "d.style.cssText='position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:14px;background:#0B3D91;color:#fff;font:600 14px/1.3 Nunito,system-ui,sans-serif;box-shadow:0 8px 24px rgba(11,61,145,.35)';"
+  "d.textContent=en?'Updating to the new version…':'Đang cập nhật phiên bản mới…';document.body.appendChild(d)}"
+  "function apply(w){if(asked)return;asked=true;clearInterval(wait);if(document.visibilityState==='visible')note();w.postMessage('SKIP_WAITING');setTimeout(function(){location.reload()},4000)}"
+  "function auto(w){if(!busy()){apply(w);return}clearInterval(wait);wait=setInterval(function(){if(!busy())apply(w)},15000);"
+  "document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')apply(w)})}"
   "navigator.serviceWorker.addEventListener('controllerchange',function(){if(asked)location.reload()});"
   "addEventListener('load',function(){navigator.serviceWorker.register('sw.js').then(function(r){"
-  "function watch(w){w.addEventListener('statechange',function(){if(w.state==='installed'&&navigator.serviceWorker.controller)bar(w)})}"
-  "if(r.waiting&&navigator.serviceWorker.controller)bar(r.waiting);if(r.installing)watch(r.installing);"
+  "function watch(w){w.addEventListener('statechange',function(){if(w.state==='installed'&&navigator.serviceWorker.controller)auto(w)})}"
+  "if(r.waiting&&navigator.serviceWorker.controller)auto(r.waiting);if(r.installing)watch(r.installing);"
   "r.addEventListener('updatefound',function(){watch(r.installing)});"
-  "document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')r.update().catch(function(){})})"
+  "document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')r.update().catch(function(){})});"
+  "setInterval(function(){r.update().catch(function(){})},30*60*1000)"
   "}).catch(function(){})})})()")
 html = f'''<!DOCTYPE html>
 <html lang="vi">

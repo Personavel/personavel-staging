@@ -53,7 +53,7 @@ Trên GitHub: repo `personavel-staging` → Settings → Pages → *Deploy from 
 | 8 | Giới hạn | Gửi liên tục 6 đánh giá trên 1 máy → lần thứ 6 báo "đợi"; 3–4 máy cùng wifi đều gửi được |
 | 9 | Cài PWA | Android Chrome: menu ⋮ → *Cài đặt ứng dụng*; iPhone Safari: Chia sẻ → *Thêm vào MH chính*. Icon đúng, mở lên không có thanh địa chỉ |
 | 10 | Offline | Mở app 1 lần, bật chế độ máy bay, mở lại → trang chủ, danh sách địa điểm, ảnh đã xem vẫn hiện; bản đồ nền và chỉ đường báo cần mạng |
-| 11 | Cập nhật | Push 1 thay đổi nhỏ lên `v2`, đợi trang thử cập nhật, mở lại app → thanh "Có phiên bản mới – Tải lại" → bấm → thấy bản mới |
+| 11 | Cập nhật | Push 1 thay đổi nhỏ, để app mở (không gõ chữ) → trong vài phút hiện “Đang cập nhật phiên bản mới…” và tự tải lại sang bản mới; đang gõ chữ thì không bị tải lại giữa chừng |
 | 12 | Đăng xuất / đăng nhập lại | Dữ liệu và nền đã chọn của tài khoản cũ còn nguyên |
 
 Khi cả 12 mục đạt: báo nhóm → gộp `v2` vào `main` (`git checkout main && git merge v2 && git push`). Nhánh `legacy` vẫn giữ bản cũ để quay lại nếu cần.

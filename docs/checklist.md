@@ -5,7 +5,7 @@ Thử mỗi mục ở **4 tổ hợp**: Tiếng Việt / English × điện tho�
 ## Chung
 - [ ] Vào lần đầu (trình duyệt ẩn danh): hiện màn chọn ngôn ngữ trên nền trắng–xanh → chọn xong mờ đi nhanh, không chặn bấm.
 - [ ] Phần giới thiệu, hỏi tên, bài trắc nghiệm đúng ngôn ngữ đã chọn; bỏ trống tên thì hiện “Du khách / Traveller”.
-- [ ] Tải lại trang: **không** hiện lại phần mở đầu; mở thẳng link `#map`, `#profile` vào đúng trang.
+- [ ] Mở web vào Trang chủ: phần mở đầu hiện (tắt được trong Cài đặt); mở thẳng link `#map`, `#profile` vào đúng trang, không hiện phần mở đầu.
 - [ ] Thanh điều hướng dưới (điện thoại) / bên trái (máy tính) chuyển trang được, không trang nào bị tràn ngang.
 - [ ] Nút robot: không che nút bấm; cuộn xuống thì ẩn, cuộn lên thì hiện; bấm mở chat nhỏ.
 - [ ] Dùng phím Tab: thấy rõ khung xanh quanh nút đang chọn.

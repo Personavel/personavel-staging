@@ -61,7 +61,7 @@ Muốn đổi con số: sửa trong hàm `pv_upsert_review` (migration 004) và 
 
 ## 2. Service Worker (chạy offline, cài như ứng dụng)
 - Trang HTML lấy **mạng trước**, chỉ dùng bản lưu khi mất mạng. JS/CSS có mã băm trong tên file nên lưu cache lâu được.
-- Khi nhóm đẩy bản mới, bản mới được tải ngầm và **chờ**; web hiện thanh "Có phiên bản mới – Tải lại". Bấm "Tải lại" mới chuyển bản, không bao giờ tự đổi giữa lúc đang dùng.
+- Khi nhóm đẩy bản mới, bản mới được tải ngầm rồi **tự cập nhật** (hiện “Đang cập nhật phiên bản mới…” và tải lại trang) vào lúc rảnh: không đang gõ chữ, không mở hộp thoại, không đang dẫn đường hay đọc thuyết minh; nếu đang bận thì đợi tới lúc rảnh hoặc lúc chuyển sang tab/ứng dụng khác. Web tự kiểm tra bản mới mỗi khi mở lại và mỗi 30 phút.
 - **Gỡ khẩn cấp trên 1 máy:** mở `https://personavel.github.io/?nosw` – xóa Service Worker và toàn bộ cache của web trên máy đó, tắt Service Worker trong tab đó.
 - **Gỡ khẩn cấp cho mọi người** (bản mới bị lỗi nặng):
   ```bash

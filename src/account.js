@@ -65,6 +65,11 @@ PV.authModal = (opt = {}) => {
       try { const sb = await PV.sb();
         if (mode === 'up'){
           const {data, error} = await sb.auth.signUp({email, password: pw, options: {emailRedirectTo: here(), data: {full_name: name || undefined}}}); if (error) throw error;
+          // the email already has a confirmed account: Supabase answers OK without sending anything (identities = [])
+          if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0){
+            busy(b, false); setMode('in'); $('#auE', box).value = email; $('#auP', box).value = '';
+            msg(box, T_('Email này đã có tài khoản. Bạn đăng nhập bằng mật khẩu, hoặc bấm “Quên mật khẩu?” nếu chưa nhớ (tài khoản tạo bằng Google thì bấm “Tiếp tục với Google”).', 'This email already has an account. Sign in with your password, or tap “Forgot your password?” (accounts made with Google: use “Continue with Google”).'));
+            $('#auP', box).focus(); return; }
           if (!data.session){ msg(box, T_(`Gần xong! Mở hộp thư ${email} và bấm vào liên kết xác nhận, rồi quay lại đăng nhập.`, `Almost done! Open ${email} and click the confirmation link, then come back and sign in.`) + WHERE(), true); resendBtn(box, email); busy(b, false); return; }
         } else { const {error} = await sb.auth.signInWithPassword({email, password: pw}); if (error) throw error; }
         close(); PV.toast(T_('Đăng nhập thành công 👋', 'Signed in 👋'));

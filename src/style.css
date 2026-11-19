@@ -1712,3 +1712,4 @@ body.glass-dark :is(.ar-btn,.ar-opt){background:rgba(255,255,255,.06);border-col
 .rp-add .rp-out{display:block;font-size:11px;line-height:1.2;text-align:center}.rp-add .rp-in{display:none}
 body.pv-in .rp-add .rp-out{display:none}body.pv-in .rp-add .rp-in{display:block}
 body:not(.pv-in) .rp-add i{display:none}
+.au-resend{margin-top:6px;font-weight:700}

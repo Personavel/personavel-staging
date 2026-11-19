@@ -106,10 +106,11 @@ PV.settingsModal = () => {
    <h4 style="margin:6px 0">Ngôn ngữ</h4>${PV.langSwitch()}
    ${PV.themeSection ? PV.themeSection() : ''}
    <label class="row small" style="margin-top:12px"><input type="checkbox" id="sr" ${s.reduce?'checked':''}> Giảm hiệu ứng chuyển động</label>
+   <label class="row small" style="margin-top:8px"><input type="checkbox" id="ssp" ${s.splash!=='off'?'checked':''}> ${PV.L('Hiện màn mở đầu mỗi lần mở web','Show the intro screen every time')}</label>
    <h4 style="margin-top:14px">Dữ liệu</h4><button class="btn ghost sm" id="sreset">Xóa dữ liệu của tài khoản đang dùng (tài khoản đã đăng xuất vẫn được giữ)</button>
    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" id="sok">Lưu</button></div>`, (box, close) => {
     if (PV.bindTheme) PV.bindTheme(box);
-    $('#sok',box).onclick = () => { s.reduce=$('#sr',box).checked; PV.save('settings'); document.body.classList.toggle('reduce', s.reduce); close(); PV.toast('Đã lưu cài đặt'); };
+    $('#sok',box).onclick = () => { s.reduce=$('#sr',box).checked; s.splash=$('#ssp',box).checked?'on':'off'; PV.save('settings'); document.body.classList.toggle('reduce', s.reduce); close(); PV.toast('Đã lưu cài đặt'); };
     $('#sreset',box).onclick = () => { [...PV.USER_KEYS,'settings'].forEach(k=>PV.store.del(k)); location.hash=''; location.reload(); };
   });
 };

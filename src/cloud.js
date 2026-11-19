@@ -121,7 +121,7 @@ function applyMe(){
   if (!state.profile || !state.profile.onboarded){
     state.profile = {name: me.display_name || T_('Du khách', 'Traveller'), avatar: me.avatar_url || null, joined: today, onboarded: true, cloudUid: me.id};
     $$('.overlay').forEach(o => { if (!o.classList.contains('modal-bg')) o.remove(); });   // close the welcome / language screens
-    state.settings.langChosen = true; state.settings.splashSeen = true; PV.save('settings');
+    state.settings.langChosen = true; PV.save('settings');
   } else {
     state.profile.name = me.display_name || state.profile.name; state.profile.avatar = me.avatar_url || state.profile.avatar; state.profile.cloudUid = me.id;
   }

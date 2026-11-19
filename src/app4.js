@@ -208,7 +208,8 @@ PV.init = () => {
     if (!state.settings.langChosen && state.settings.theme && state.settings.theme.id !== 'default'){ state.settings.theme = {id:'default'}; PV.save('settings'); PV.applyTheme && PV.applyTheme({id:'default'}); }
     PV.langGate(() => PV.welcome());
   }
-  else if (!state.settings.splashSeen){ state.settings.splashSeen = true; PV.save('settings'); PV.welcome(false); }   // the intro plays once; afterwards (and for deep links) open the page directly
+  else if (state.settings.splash !== 'off' && /^(#home)?$/.test(location.hash.split('?')[0]) && !/[?&](code|error|error_description)=/.test(location.search)) PV.welcome(false);
+  // the intro (welcome back) plays each time the site is opened on Home; deep links (#map…), returns from sign-in and Settings → off go straight to the page
   if ('speechSynthesis' in window) speechSynthesis.getVoices();
 };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', PV.init); else PV.init();

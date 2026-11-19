@@ -253,5 +253,16 @@ PV.requireLogin = (why) => {
 };
 
 /* ---------- start ---------- */
-if (hasSession() || redirected()) PV.sb().catch(() => {});
+// coming back from Google / an email link with an error (?error=…&error_description=…): tell the visitor and clean the address
+const backErr = (() => { const q = new URLSearchParams(location.search); const h = new URLSearchParams((location.hash.split('?')[1]) || ''); return q.get('error_description') || q.get('error') ? {code: q.get('error_code') || q.get('error'), desc: q.get('error_description') || ''} : (h.get('error_description') ? {code: h.get('error_code') || h.get('error'), desc: h.get('error_description')} : null); })();
+if (backErr){
+  history.replaceState(null, '', location.pathname + (location.hash.split('?')[0] || ''));
+  const expired = /otp_expired|expired|invalid.*link/i.test(backErr.code + ' ' + backErr.desc);
+  const denied = /access_denied/i.test(backErr.code) && !expired;
+  const msg = expired ? T_('Liên kết trong email đã hết hạn hoặc đã được dùng. Bạn gửi lại email mới nhé.', 'The email link has expired or was already used. Please request a new one.')
+    : denied ? T_('Bạn đã hủy đăng nhập.', 'Sign-in was cancelled.')
+    : T_('Đăng nhập chưa thành công do lỗi máy chủ đăng nhập. Bạn thử lại sau, hoặc đăng nhập bằng email.', 'Sign-in failed because of a sign-in server error. Please try again later, or sign in with email.');
+  console.info('[Personavel] Lỗi đăng nhập trả về:', backErr.code, backErr.desc);
+  setTimeout(() => { PV.toast(msg); if (!denied && PV.authModal) PV.authModal({why: msg}); }, 900);
+} else if (hasSession() || redirected()) PV.sb().catch(() => {});
 })();

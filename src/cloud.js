@@ -264,5 +264,17 @@ if (backErr){
     : T_('Đăng nhập chưa thành công do lỗi máy chủ đăng nhập. Bạn thử lại sau, hoặc đăng nhập bằng email.', 'Sign-in failed because of a sign-in server error. Please try again later, or sign in with email.');
   console.info('[Personavel] Lỗi đăng nhập trả về:', backErr.code, backErr.desc);
   setTimeout(() => { PV.toast(msg); if (!denied && PV.authModal) PV.authModal({why: msg}); }, 900);
-} else if (hasSession() || redirected()) PV.sb().catch(() => {});
+} else if (hasSession() || redirected()){
+  const viaCode = /[?&]code=/.test(location.search);
+  PV.sb().then(async (c) => {
+    if (!viaCode) return;
+    // an email link opened in another browser: the email is confirmed but this browser cannot finish the sign-in (no PKCE verifier)
+    await new Promise(r => setTimeout(r, 2500));
+    const {data} = await c.auth.getSession();
+    if (data && data.session) return;
+    history.replaceState(null, '', location.pathname + (location.hash.split('?')[0] || ''));
+    const m = T_('Email của bạn đã được xác nhận ✅ Bạn đăng nhập bằng email và mật khẩu nhé.', 'Your email is confirmed ✅ Please sign in with your email and password.');
+    PV.toast(m); if (PV.authModal) PV.authModal({why: m});
+  }).catch(() => {});
+}
 })();

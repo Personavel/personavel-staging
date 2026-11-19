@@ -247,7 +247,8 @@ PV.views.profile = (m, ...a) => {
 };
 // welcome screen (drawn by app4.js, loaded later): "already have an account?"
 new MutationObserver(() => { const ov = document.getElementById('welcome');
-  if (ov && !C.user && !(state.profile && state.profile.onboarded) && !ov.querySelector('#wLogin')){   // only for brand-new visitors ov.insertAdjacentHTML('beforeend', `<button type="button" class="btn ghost sm w-login" id="wLogin">☁️ ${T_('Đã có tài khoản? Đăng nhập', 'Have an account? Sign in')}</button>`);
+  if (ov && !C.user && !(state.profile && state.profile.onboarded) && !ov.querySelector('#wLogin')){   /* only for brand-new visitors */
+    ov.insertAdjacentHTML('beforeend', `<button type="button" class="btn ghost sm w-login" id="wLogin">☁️ ${T_('Đã có tài khoản? Đăng nhập', 'Have an account? Sign in')}</button>`);
     ov.querySelector('#wLogin').onclick = () => PV.authModal(); } }).observe(document.body, {childList: true});
 // a re-render after login/logout when the page depends on it
 let lastUid = null, lastRole = null;

@@ -1720,3 +1720,17 @@ body:not(.pv-in) .rp-add i{display:none}
 #rpF .btn,.acc-card form>.btn,.acc-card>.btn,.au-go{margin-top:14px}
 #rpF label,.acc-card form label{display:block;margin-top:10px}
 #rpF .input,.acc-card form .input,.au form .input{margin-top:4px}
+
+/* ===== admin header ===== */
+.ad-head{margin:6px 0 14px;display:flex;flex-direction:column;gap:12px}
+.ad-hi{display:flex;align-items:center;gap:12px}.ad-hi>div{display:flex;flex-direction:column;min-width:0}
+.ad-av{width:44px;height:44px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#2F6FA3;color:#fff;font:800 18px Nunito,system-ui,sans-serif;flex:0 0 44px}
+.ad-av img{width:100%;height:100%;object-fit:cover}
+.ad-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:600px){ .ad-stats{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.ad-stat{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid #D6E6F4;background:#F4F9FE;border-radius:14px;padding:10px 12px;cursor:pointer;text-align:left;font:600 12px Nunito,system-ui,sans-serif;color:#1F4E79;min-height:76px}
+.ad-stat b{font-size:24px;line-height:1.1;color:#1F4E79}.ad-ic{font-size:16px}
+.ad-stat.hot{border-color:#E8B730;background:#FFF8E1}.ad-stat.hot b{color:#8A5A00}
+.ad-stat:hover{border-color:#2F6FA3}
+.ad-last{margin:0}
+body.glass-dark .ad-stat{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:var(--ink-l)}body.glass-dark .ad-stat b{color:var(--ink-l)}

@@ -9,6 +9,9 @@ const REASONS = () => [['abuse', T_('Xúc phạm, quấy rối', 'Abuse or haras
   ['bad_photo', T_('Ảnh không phù hợp', 'Inappropriate photo')], ['other', T_('Lý do khác', 'Something else')]];
 const reasonText = (r) => (REASONS().find(x => x[0] === r) || [r, r])[1];
 const when = (t) => { try { return new Date(t).toLocaleString(PV.lang === 'en' ? 'en-GB' : 'vi-VN', {dateStyle: 'short', timeStyle: 'short'}); } catch(e){ return ''; } };
+const ACT = {hide: ['Ẩn nội dung', 'Hid content'], delete: ['Xóa nội dung', 'Deleted content'], restore: ['Khôi phục', 'Restored'], dismiss: ['Bỏ qua báo cáo', 'Dismissed report'],
+  photo_approve: ['Duyệt ảnh', 'Approved photo'], photo_reject: ['Từ chối ảnh', 'Rejected photo'], ban: ['Khóa đăng bài', 'Blocked posting'], unban: ['Mở khóa', 'Unblocked'], set_ban: ['Khóa/mở khóa', 'Block/unblock']};
+const actText = (a) => { const k = String(a || ''); const v = ACT[k] || ACT[k.replace(/^(review|post)_/, '')]; return v ? T_(v[0], v[1]) : k; };
 const pname = (id) => { const p = PV.byId(id); return p ? PV.L(p.name, p.name_en || p.name) : (id === 'personavel' ? 'Personavel' : (id || '')); };
 const errBox = (root, t, ok) => { const el = $('.au-msg', root); if (!el) return; el.hidden = !t; el.className = 'au-msg ' + (ok ? 'ok' : 'err'); el.textContent = t || ''; };
 
@@ -38,11 +41,29 @@ PV.views.admin = async (m) => {
   if (!C.me) await PV.refreshMe();
   if (!C.me || C.me.role !== 'admin'){ m.innerHTML = `<h1 class="title">🛡️ ${T_('Quản trị', 'Admin')}</h1><div class="card"><p>${T_('Trang này chỉ dành cho quản trị viên của nhóm Personavel.', 'This page is only for Personavel team admins.')}</p><a class="btn ghost" href="#profile">${T_('Về trang cá nhân', 'Back to profile')}</a></div>`; return; }
   m.innerHTML = `<h1 class="title">🛡️ ${T_('Quản trị', 'Admin')}</h1><p class="sub">${T_('Xử lý báo cáo, duyệt ảnh, quản lý người dùng. Mọi thao tác đều được ghi nhật ký.', 'Handle reports, approve photos, manage users. Every action is logged.')}</p>
+    <section class="ad-head card"><div class="ad-hi"><span class="ad-av">${PV.cloudAvatar() ? `<img src="${esc(PV.cloudAvatar())}" alt="">` : esc((PV.cloudName()[0] || 'A').toUpperCase())}</span>
+      <div><b>${T_('Xin chào', 'Hello')} ${esc(PV.cloudName())} 👋</b><span class="small muted">${T_('Tổng quan cộng đồng Personavel hôm nay', 'Today’s overview of the Personavel community')}</span></div></div>
+      <div class="ad-stats" id="adStats">${[['reports', '⚑', T_('Báo cáo đang mở', 'Open reports')], ['photos', '🖼️', T_('Ảnh chờ duyệt', 'Photos waiting')], ['users', '👥', T_('Người dùng', 'Users')], ['banned', '🔒', T_('Đang bị khóa', 'Blocked')]]
+        .map(([k, ic, t]) => `<button type="button" class="ad-stat" data-go="${k === 'banned' ? 'users' : k}" data-k="${k}"><span class="ad-ic" aria-hidden="true">${ic}</span><b>…</b><span>${t}</span></button>`).join('')}</div>
+      <p class="tiny muted ad-last" id="adLast"></p></section>
     <div class="ad-tabs" role="tablist">${TABS().map(([k, t]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${k === tab}">${t}</button>`).join('')}</div>
     <div class="ad-body" id="adBody" role="tabpanel"></div>`;
-  $$('[data-tab]', m).forEach(b => b.onclick = () => { tab = b.dataset.tab; $$('[data-tab]', m).forEach(x => x.setAttribute('aria-selected', String(x === b))); draw($('#adBody', m)); });
+  const open = (t) => { tab = t; $$('[data-tab]', m).forEach(x => x.setAttribute('aria-selected', String(x.dataset.tab === t))); draw($('#adBody', m)); };
+  $$('[data-tab]', m).forEach(b => b.onclick = () => open(b.dataset.tab));
+  $$('.ad-stat', m).forEach(b => b.onclick = () => { open(b.dataset.go); $('#adBody', m).scrollIntoView({behavior: state.settings.reduce ? 'auto' : 'smooth', block: 'start'}); });
   draw($('#adBody', m));
+  overview(m);
 };
+/* numbers for the header – each one loads on its own, a failure only shows "–" */
+async function overview(m){
+  const set = (k, v) => { const b = m.querySelector(`.ad-stat[data-k="${k}"] b`); if (b) b.textContent = v; const el = m.querySelector(`.ad-stat[data-k="${k}"]`); if (el) el.classList.toggle('hot', (k === 'reports' || k === 'photos') && +v > 0); };
+  const n = (p, k, f) => p.then(r => set(k, f(r || [])), () => set(k, '–'));
+  n(PV.rpc('pv_admin_reports', {p_status: 'open'}), 'reports', r => r.length >= 200 ? '200+' : r.length);
+  n(PV.rpc('pv_admin_pending_photos'), 'photos', r => r.length);
+  n(PV.rpc('pv_admin_users', {p_query: null}), 'users', r => r.length >= 50 ? '50+' : r.length);
+  n(PV.rpc('pv_admin_users', {p_query: null}), 'banned', r => r.filter(u => u.banned).length);
+  PV.rpc('pv_admin_log', {p_limit: 1}).then(r => { const el = m.querySelector('#adLast'); if (el && r && r[0]) el.textContent = T_('Thao tác gần nhất: ', 'Last action: ') + `${r[0].admin_name || '?'} · ${actText(r[0].action)} · ${when(r[0].created_at)}`; }, () => {});
+}
 const loading = (el) => { el.innerHTML = `<p class="small muted">⏳ ${T_('Đang tải…', 'Loading…')}</p>`; };
 const failed = (el, e) => { el.innerHTML = `<div class="card"><p class="small">⚠️ ${esc(e.userMsg || PV.errText('PV_UNKNOWN'))}</p></div>`; };
 function draw(el){ ({reports: drawReports, photos: drawPhotos, users: drawUsers, log: drawLog})[tab](el); }
@@ -107,7 +128,7 @@ async function drawLog(el){
   const list = $('.ad-list', el); loading(list);
   let rows; try { rows = await PV.rpc('pv_admin_log', {p_limit: 50}); } catch(e){ return failed(list, e); }
   if (!rows.length){ list.innerHTML = `<p class="small muted">${T_('Chưa có thao tác nào.', 'No actions yet.')}</p>`; return; }
-  list.innerHTML = `<ol class="ad-log">${rows.map(r => `<li><span class="tiny muted">${when(r.created_at)}</span> <b>${esc(r.admin_name || '?')}</b> · <code>${esc(r.action)}</code> ${esc(r.target_type || '')}${r.reason ? ` · “${esc(r.reason)}”` : ''}<span class="tiny muted ad-id"> ${esc(String(r.target_id || '').slice(0, 8))}</span></li>`).join('')}</ol>`;
+  list.innerHTML = `<ol class="ad-log">${rows.map(r => `<li><span class="tiny muted">${when(r.created_at)}</span> <b>${esc(r.admin_name || '?')}</b> · <span class="st st-public">${esc(actText(r.action))}</span> ${esc(r.target_type || '')}${r.reason ? ` · “${esc(r.reason)}”` : ''}<span class="tiny muted ad-id"> ${esc(String(r.target_id || '').slice(0, 8))}</span></li>`).join('')}</ol>`;
 }
 
 /* reviews in the community feed: the old one-tap report becomes the report box (with reasons) */

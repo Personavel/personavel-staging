@@ -243,8 +243,36 @@ PV.views.profile = (m, ...a) => {
       : `<span class="small">☁️ ${T_('Đăng nhập để đồng bộ dữ liệu giữa các máy, đăng ảnh và viết bài.', 'Sign in to sync across devices, post photos and write posts.')}</span><span class="spacer"></span><button class="btn sm" id="accLogin">${T_('Đăng nhập', 'Sign in')}</button>`}</div>`);
     const b = $('#accLogin', m); if (b) b.onclick = () => PV.authModal();
   }
+  // signed in: the ✏️ button (and the photo) edit the ACCOUNT, otherwise the name from pv_me() comes back on the next visit
+  const pe = m.querySelector('#pedit');
+  if (pe && C.user) pe.onclick = () => editProfile(m);
   return r;
 };
+function editProfile(m){
+  const cur = PV.cloudName(), av = PV.cloudAvatar();
+  PV.modal(`<h3>${T_('Chỉnh sửa hồ sơ', 'Edit profile')}</h3>
+    <div class="row" style="gap:12px;align-items:center;margin-bottom:8px"><div class="avatar acc-av" id="epAv">${av ? `<img src="${esc(av)}" alt="">` : esc((cur[0] || 'D').toUpperCase())}</div>
+      <label class="btn ghost sm acc-up"><input type="file" accept="image/*" id="epFile" hidden>📷 ${T_('Chọn ảnh', 'Choose photo')}</label></div>
+    <label class="small" style="display:block">${T_('Tên hiển thị', 'Display name')}<input class="input" id="epName" maxlength="40" value="${esc(cur)}"></label>
+    <p class="tiny muted" style="margin:6px 0 0">☁️ ${T_('Lưu vào tài khoản – hiện giống nhau trên mọi máy.', 'Saved to your account – the same on every device.')}</p>
+    <div class="au-msg" role="alert" hidden></div>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn ghost" data-close>${T_('Hủy', 'Cancel')}</button><button class="btn" id="epGo">${T_('Lưu', 'Save')}</button></div>`, (bg, close) => {
+    const box = bg.querySelector('.modal'); let file = null;
+    $('#epFile', bg).onchange = (e) => { file = e.target.files[0] || null; if (file){ const u = URL.createObjectURL(file); $('#epAv', bg).innerHTML = `<img src="${u}" alt="">`; } };
+    $('#epGo', bg).onclick = async () => {
+      const name = $('#epName', bg).value.trim(), go = $('#epGo', bg);
+      if (!name) return msg(box, T_('Tên hiển thị không được để trống.', 'The display name cannot be empty.'));
+      if (PV.badText && PV.badText(name)) return msg(box, PV.errText('PV_BAD_WORDS'));
+      busy(go, true);
+      try {
+        if (name !== cur) C.me = await PV.rpc('pv_update_profile', {p_display_name: name, p_avatar_url: null, p_lang: null});
+        if (file) await uploadAvatar(file);
+        if (state.profile){ state.profile.name = (C.me && C.me.display_name) || name; if (C.me && C.me.avatar_url) state.profile.avatar = C.me.avatar_url; PV.save('profile'); }
+        applyHeader(); close(); PV.toast(T_('Đã lưu hồ sơ ✅', 'Profile saved ✅')); PV.views.profile(m);
+      } catch(e){ busy(go, false); msg(box, e.userMsg || PV.errText(e.code || 'PV_UNKNOWN')); }
+    };
+  });
+}
 // welcome screen (drawn by app4.js, loaded later): "already have an account?"
 new MutationObserver(() => { const ov = document.getElementById('welcome');
   if (ov && !C.user && !(state.profile && state.profile.onboarded) && !ov.querySelector('#wLogin')){   /* only for brand-new visitors */

@@ -178,7 +178,7 @@ PV.greetNew = () => {
   pop.querySelector('.gp-x').onclick = close;
   pop.querySelectorAll('.gp-place').forEach(a => a.onclick = (e) => { e.preventDefault(); PV.openPlace(a.dataset.gp); });
   pop.querySelectorAll('[data-gpa]').forEach(b => b.onclick = () => { const a = b.dataset.gpa; close();
-    if (a==='trip'){ PV.pendingAsk = PV.L('Lên lịch trình 1 ngày phù hợp với phong cách của mình','Plan a 1 day trip that fits my style'); location.hash = '#chat'; }
+    if (a==='trip'){ const q = PV.L('Lên lịch trình 1 ngày phù hợp với phong cách của mình','Plan a 1 day trip that fits my style'); if (PV.switchGuide) PV.switchGuide('ha', q); else { PV.pendingAsk = q; location.hash = '#chat'; } }
     else if (a==='tour'){ location.hash = '#home'; setTimeout(PV.tour, 350); }
     else if (a==='map') location.hash = '#map';
     else location.hash = '#chat'; });

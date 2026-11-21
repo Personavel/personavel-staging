@@ -97,7 +97,7 @@ function heroBg(){
   PV.heroIdx = (PV.heroIdx + 1) % G.length; PV.store.set('heroIdx', PV.heroIdx);
   const g = G[PV.heroIdx];
   return `<div class="hero-bg" aria-hidden="true"><img class="on" src="${g.src}"${PV.gset(g.src)} alt="" fetchpriority="high"><img alt=""></div><div class="hero-shade"></div>
-    <button class="hero-cap" title="Xem ảnh lớn">📍 ${esc(PV.lang==='en'?g.cap_en:g.cap)}<span class="hero-credit">${g.credit?' · Ảnh: '+esc(g.credit):''}</span></button>`;
+    <button class="hero-cap" title="Xem ảnh lớn">📍 ${esc(PV.lang==='en'?g.cap_en:g.cap)}<span class="hero-credit">${g.credit?' · '+PV.L('Ảnh','Photo')+': '+esc(PV.L(g.credit, g.credit==='nhóm Personavel'?'Personavel team':g.credit)):''}</span></button>`;
 }
 let heroTimer = null;
 function bindHero(m){
@@ -109,7 +109,7 @@ function bindHero(m){
     im.onload = () => { imgs[front].classList.remove('on'); im.classList.add('on'); front = back; };
     if (/^img\/g\d+\.webp$/.test(g.src)){ im.srcset = `${g.src.replace('.webp','-800.webp')} 800w, ${g.src.replace('.webp','-1200.webp')} 1200w, ${g.src} 1600w`; im.sizes = '100vw'; } else im.removeAttribute('srcset');
     if (!PV._heroFirst){ PV._heroFirst = 1; im.fetchPriority = 'high'; im.loading = 'eager'; }
-    im.src = g.src; cap.innerHTML = '📍 ' + esc(PV.lang==='en' ? g.cap_en : g.cap) + (g.credit ? '<span class="hero-credit"> · Ảnh: ' + esc(g.credit) + '</span>' : '');
+    im.src = g.src; cap.innerHTML = '📍 ' + esc(PV.lang==='en' ? g.cap_en : g.cap) + (g.credit ? '<span class="hero-credit"> · ' + PV.L('Ảnh','Photo') + ': ' + esc(PV.L(g.credit, g.credit==='nhóm Personavel'?'Personavel team':g.credit)) + '</span>' : '');
   };
   cap.onclick = () => PV.lightbox(G.map(g=>({src:g.src, cap:(PV.lang==='en'?g.cap_en:g.cap)+(g.credit?' — Ảnh: '+g.credit+' (Wikimedia Commons)':'')})), PV.heroIdx);
   clearInterval(heroTimer);
@@ -383,11 +383,42 @@ function showMe(fly){ if (!map||!PV.userPos) return; const ll=[PV.userPos[1],PV.
   if (fly) map.setView(ll, 16, {animate:false}); }
 const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
 PV.norm = norm;
+// Tìm địa điểm bằng cả tiếng Việt (có/không dấu) lẫn tiếng Anh: "Ben Thanh market", "war museum", "coffee", "pagoda"…
+// Mỗi từ trong câu tìm phải có trong tên / tên tiếng Anh / nổi bật / loại / địa chỉ; tên khớp được xếp trước.
+const EN_WORDS = [ // từ tiếng Việt (đã bỏ dấu) → từ tiếng Anh khách hay gõ
+  ['cho','market'], ['bao tang','museum'], ['chua','pagoda temple'], ['nha tho','church cathedral'], ['dinh','palace'],
+  ['buu dien','post office'], ['nha hat','opera house theatre theater'], ['my thuat','fine arts art'], ['chung tich chien tranh','war'],
+  ['am thuc','food eat restaurant'], ['quan','restaurant eatery'], ['ca phe','coffee cafe'], ['banh mi','sandwich baguette bread'],
+  ['com tam','broken rice'], ['pho','noodle soup'], ['hu tieu','noodle soup'], ['bun','noodle vermicelli'], ['lau','hotpot'],
+  ['che','dessert sweet'], ['xoi','sticky rice'], ['oc','snail seafood'], ['hai san','seafood'], ['nuong','bbq grill grilled'],
+  ['qua luu niem','souvenir gift'], ['dac san','specialty local'], ['thoi trang','fashion clothes'], ['cong vien','park'], ['cau','bridge']];
+const CAT_WORDS = { history:'history historic sight landmark', checkin:'photo landmark sight', shopping:'shopping shop', food:'food eat',
+  nature:'nature park', entertainment:'entertainment fun' };
+const STOP = new Set(['the','of','a','an','in','at','to','near','and','saigon','hcmc','sai','gon','city','vietnam','tp','hcm']);
+const hasW = (hay, w) => new RegExp('(^|[^a-z0-9])'+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])').test(hay);
+let HAY = null;
+const hayOf = (p) => { HAY = HAY || new Map(); let h = HAY.get(p); if (h) return h;
+  const city = x => x.replace(/thanh pho( ho chi minh)?|tp\.? ?hcm/g,' '); // "Thành phố" ≠ phở
+  const nm = city(norm(p.name+' '+(p.name_en||''))), kind = norm(p.kind||'');
+  const en = EN_WORDS.filter(([vi]) => hasW(nm+' '+kind, vi)).map(x=>x[1]).join(' ');
+  const rest = norm([(p.highlights||[]).join(' '), (p.highlights_en||[]).join(' '), p.address, kind,
+    (p.cats||[]).map(c=>CAT_WORDS[c]||c).join(' '), en].join(' '));
+  h = {nm, all: nm+' '+city(rest)}; HAY.set(p, h); return h; };
+PV.findPlaces = (q) => {
+  const nq = norm(q||'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); if (!nq) return [];
+  const toks = nq.split(' ').filter(t => t && !STOP.has(t)); if (!toks.length) toks.push(...nq.split(' '));
+  const out = [];
+  D.places.forEach(p => { const h = hayOf(p);
+    const inName = h.nm.includes(nq) || toks.every(t => h.nm.includes(t));
+    if (!inName && !h.all.includes(nq) && !toks.every(t => t.length < 3 ? hasW(h.all, t) : h.all.includes(t))) return;
+    out.push([inName ? 0 : 1, p]); });
+  return out.sort((a,b) => a[0]-b[0]).map(x => x[1]);
+};
 function search(q, live){
   const box = $('#qres'); if (!q){ box.innerHTML=''; return; }
-  const nq = norm(q).replace(/^duong\s+/,'');
+  const nq = norm(q).replace(/^(duong|pho)\s+/,'').replace(/\s+(street|st|road|rd|walking street)\.?$/,'').trim();
   const streets = D.streets.filter(s => norm(s.name).includes(nq)).slice(0,4);
-  const places = D.places.filter(p => norm(p.name+' '+(p.highlights||[]).join(' ')+' '+p.address).includes(nq)).slice(0,6);
+  const places = PV.findPlaces(q).slice(0,6);
   box.innerHTML = streets.map(s=>`<div class="pitem" data-sid="${s.id}"><div class="pin" style="background:#5B9BD5"><span>🛣️</span></div><div><b>Đường ${esc(s.name)}</b><div class="small muted">Câu chuyện tên đường · ${esc(s.wards)}</div></div></div>`).join('')
     + places.map(PV.pitem).join('')
     + (!live ? `<div class="small muted" style="padding:4px">Đang tìm thêm trên OpenStreetMap…</div>` : '');
@@ -437,7 +468,7 @@ PV.views.trip = (m) => {
         <label class="small">Di chuyển <select class="input" id="tm" style="width:auto;padding:6px 10px">${Object.entries(PV.MODES).map(([k,v])=>`<option value="${k}" ${t.mode===k?'selected':''}>${v.name}</option>`).join('')}</select></label></div>
       <div class="stops" id="stops"></div>
       ${t.stops.length?`<div class="row" style="margin-top:12px"><span class="small muted">Tổng quãng đường ~${PV.fmtKm(t.km||0)} · chi phí ước tính ~${PV.fmtVnd(t.cost||0)}/người</span></div>`:''}
-      <div class="row" style="margin-top:14px"><button class="btn" id="tai">✨ ${t.stops.length?'Tạo lại':'Tạo'} lịch trình từ điểm xuất phát</button><button class="btn ghost" id="tchat">💬 Hỏi ${PV.todayGuide().name}</button><a class="btn ghost" href="#map">${ICON.plus.replace('<svg','<svg width=16 height=16')} Thêm từ bản đồ</a>
+      <div class="row" style="margin-top:14px"><button class="btn" id="tai">✨ ${t.stops.length?'Tạo lại':'Tạo'} lịch trình từ điểm xuất phát</button><button class="btn ghost" id="tchat">💬 ${PV.L('Hỏi','Ask')} ${(PV.GUIDES.find(g=>g.id==='ha')||PV.todayGuide()).name}</button><a class="btn ghost" href="#map">${ICON.plus.replace('<svg','<svg width=16 height=16')} Thêm từ bản đồ</a>
       ${t.stops.length?'<button class="btn mint" id="tsave">Lưu vào nhật ký</button><button class="btn ghost" id="tclear">Xóa lịch trình</button>':''}</div>
     </div>
     <div class="card" style="padding:10px"><div id="tripmap"></div><p class="tiny muted" id="tripRouteNote" style="margin:6px 4px 0">Đường nối thể hiện thứ tự tham quan (đường chim bay). Bấm "Chỉ đường" ở từng điểm để xem tuyến thực tế.</p></div>
@@ -477,7 +508,9 @@ PV.views.trip = (m) => {
     if (!nt){ PV.toast('Chưa tìm được lịch trình phù hợp'); return; }
     nt.origin = Object.assign({}, og); state.trip = nt; PV.retime(nt); PV.save('trip'); PV.views.trip(m);
     PV.toast('Đã tạo lịch trình gần ' + og.name); };
-  const tch = $('#tchat'); if (tch) tch.onclick = () => { PV.pendingAsk = 'Gợi ý cho mình lịch trình khám phá Sài Gòn trong một ngày phù hợp với phong cách của mình'; location.hash='#chat'; };
+  const tch = $('#tchat'); if (tch) tch.onclick = () => { // lịch trình là việc của Hà → mở thẳng Hà, hỏi bằng ngôn ngữ đang dùng
+    const q = PV.L('Gợi ý cho mình lịch trình khám phá Sài Gòn trong một ngày phù hợp với phong cách của mình','Suggest a one-day Saigon itinerary that fits my style');
+    if (PV.switchGuide) PV.switchGuide('ha', q); else { PV.pendingAsk = q; location.hash='#chat'; } };
   const sv = $('#tsave'); if (sv) sv.onclick = () => PV.saveDiary();
   const cl = $('#tclear'); if (cl) cl.onclick = () => { t.stops=[]; upd(); };
   if (!window.L && t.stops.length) PV.loadLeaflet().then(() => { if (location.hash === '#trip') PV.route(); }).catch(()=>{});

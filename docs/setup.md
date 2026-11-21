@@ -92,6 +92,8 @@ Muốn đổi con số: sửa trong hàm `pv_upsert_review` (migration 004) và 
 - **SMTP Gmail:** đã cài (Authentication → Emails → SMTP Settings): `smtp.gmail.com:465`, người gửi “Personavel” <khanhannguyen240710@gmail.com> (tạm thời – nên đổi sang Gmail riêng của dự án), mật khẩu = App Password của Gmail đó. Gmail cho ~500 thư/ngày. Đổi Gmail: tạo App Password mới (cần Xác minh 2 bước) → sửa Sender email + Username + Password → Save.
 - **Mẫu email tiếng Việt:** đã cài 6 mẫu (xác nhận đăng ký, lời mời, liên kết đăng nhập, đổi email, đặt lại mật khẩu, mã xác minh). Nguồn: `supabase/templates/build_templates.py` → `*.html` + `subjects.json`. Sửa nội dung → chạy lại script → dán HTML vào Authentication → Emails → Templates → mẫu tương ứng, tiêu đề lấy từ `subjects.json`.
 
+- **Migration 006:** đã chạy ngày 21/11/2026. Chỉ tài khoản đã đăng nhập (không bị khóa) mới tải ảnh lên `review-photos`; khách vẫn viết đánh giá chữ và giữ ảnh cũ. Hoàn tác: khối "HOÀN TÁC" cuối `supabase/migrations/006_photos_login_only.sql`.
+- **Migration 007:** đã chạy ngày 19/11/2026 (`pv_my_content` trả thêm `love`, `tags`).
+
 ### Còn phải làm
-- **Migration 006 (sau khi giao diện tài khoản lên `main`):** chỉ người đã đăng nhập mới tải ảnh lên `review-photos` (hiện vẫn cho khách để web cũ chạy).
 - **Proxy AI cho chatbot:** cần khóa Anthropic API (có tính phí) đặt bằng `supabase secrets set ANTHROPIC_API_KEY=…`, không bao giờ đưa vào code.

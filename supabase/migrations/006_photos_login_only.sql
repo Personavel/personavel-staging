@@ -1,6 +1,5 @@
 -- 006 · Chỉ người đã đăng nhập mới tải ảnh lên kho review-photos
--- ⚠️ CHƯA CHẠY. Chỉ chạy SAU KHI giao diện có đăng nhập (nhánh v3-ui) đã lên `main` và đã gửi ảnh bằng phiên đăng nhập.
---    Chạy sớm hơn → web đang chạy (khách, khóa anon) sẽ không tải ảnh lên được nữa.
+-- ĐÃ CHẠY ngày 21/11/2026, sau khi web trên `main` tải ảnh bằng phiên đăng nhập (commit 36f2efe).
 -- Thử trước: supabase/tests/006_photos_test.sql (tự rollback).
 -- Hoàn tác: chạy khối "HOÀN TÁC" ở cuối file.
 

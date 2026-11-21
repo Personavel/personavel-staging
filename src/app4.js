@@ -32,7 +32,7 @@ PV.welcome = (force) => {
   const ov = document.createElement('div'); ov.className='overlay'; ov.id='welcome';
   ov.innerHTML = `${[[8,40,90,26],[22,70,140,34],[60,20,110,28],[75,82,160,40]].map(([t,dl,w,h],i)=>`<div class="cloud" style="top:${t}vh;width:${w}px;height:${h}px;animation-delay:-${dl/4}s;animation-duration:${26+i*6}s"></div>`).join('')}
     <button class="btn ghost sm skip" id="wskip">Bỏ qua</button>
-    ${PV.langSwitch('welcome-lang')}
+    ${PV._langJustChosen ? '' : PV.langSwitch('welcome-lang')}
     <div class="welcome-center" id="wc">
       <div class="intro-stage">
         <div class="logoText letters" aria-label="Personavel">${'Personavel'.split('').map((c,i)=>`<span aria-hidden="true" style="animation-delay:${(0.2+i*0.16).toFixed(2)}s">${c}</span>`).join('')}</div>
@@ -190,7 +190,7 @@ PV.langGate = (next) => {
     </div>`;
   document.body.appendChild(ov);
   ov.querySelectorAll('.lg-opt').forEach(b => b.onclick = () => {
-    state.settings.langChosen = true; PV.save('settings');
+    state.settings.langChosen = true; PV._langJustChosen = true; PV.save('settings'); // vừa chọn ở màn trước → màn chào không hỏi lại
     if (PV.lang !== b.dataset.l) PV.setLang(b.dataset.l); else PV.save('settings');
     b.classList.add('picked'); ov.classList.add('out'); ov.style.pointerEvents = 'none';
     setTimeout(() => { ov.remove(); next(); }, 220);

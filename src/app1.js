@@ -71,13 +71,13 @@ PV.fmtKm = km => km<1 ? Math.round(km*1000)+' m' : km.toFixed(1)+' km';
 PV.userPos = null;
 /* where the visitor starts: one of the central wards, or their own GPS position */
 PV.AREAS = [
-  {id:'ben-thanh', name:'Bến Thành', hint:'Chợ Bến Thành, phố đi bộ Nguyễn Huệ', hint_en:'Bến Thành Market, Nguyễn Huệ walking street', c:[106.6981,10.7725]},
-  {id:'sai-gon', name:'Sài Gòn', hint:'Nhà thờ Đức Bà, Bưu điện, Nhà hát', hint_en:'Notre-Dame Cathedral, Post Office, Opera House', c:[106.6995,10.7795]},
-  {id:'tan-dinh', name:'Tân Định', hint:'Chợ và Nhà thờ Tân Định', hint_en:'Tân Định Market & Church', c:[106.6904,10.7893]},
-  {id:'xuan-hoa', name:'Xuân Hòa', hint:'Hồ Con Rùa, Võ Văn Tần', hint_en:'Turtle Lake, Võ Văn Tần', c:[106.6915,10.7826]},
-  {id:'nhieu-loc', name:'Nhiêu Lộc', hint:'Kỳ Đồng, Lê Văn Sỹ', hint_en:'Kỳ Đồng, Lê Văn Sỹ', c:[106.6810,10.7855]},
-  {id:'ban-co', name:'Bàn Cờ', hint:'Chợ Bàn Cờ, Nguyễn Thiện Thuật', hint_en:'Bàn Cờ Market, Nguyễn Thiện Thuật', c:[106.6815,10.7705]},
-  {id:'cau-ong-lanh', name:'Cầu Ông Lãnh', hint:'Nguyễn Thái Học, Cô Giang', hint_en:'Nguyễn Thái Học, Cô Giang', c:[106.6962,10.7660]}
+  {id:'ben-thanh', old:1, name:'Bến Thành', hint:'Chợ Bến Thành, phố đi bộ Nguyễn Huệ', hint_en:'Bến Thành Market, Nguyễn Huệ walking street', c:[106.6981,10.7725]},
+  {id:'sai-gon', old:1, name:'Sài Gòn', hint:'Nhà thờ Đức Bà, Bưu điện, Nhà hát', hint_en:'Notre-Dame Cathedral, Post Office, Opera House', c:[106.6995,10.7795]},
+  {id:'tan-dinh', old:1, name:'Tân Định', hint:'Chợ và Nhà thờ Tân Định', hint_en:'Tân Định Market & Church', c:[106.6904,10.7893]},
+  {id:'xuan-hoa', old:3, name:'Xuân Hòa', hint:'Hồ Con Rùa, Võ Văn Tần', hint_en:'Turtle Lake, Võ Văn Tần', c:[106.6915,10.7826]},
+  {id:'nhieu-loc', old:3, name:'Nhiêu Lộc', hint:'Kỳ Đồng, Lê Văn Sỹ', hint_en:'Kỳ Đồng, Lê Văn Sỹ', c:[106.6810,10.7855]},
+  {id:'ban-co', old:3, name:'Bàn Cờ', hint:'Chợ Bàn Cờ, Nguyễn Thiện Thuật', hint_en:'Bàn Cờ Market, Nguyễn Thiện Thuật', c:[106.6815,10.7705]},
+  {id:'cau-ong-lanh', old:1, name:'Cầu Ông Lãnh', hint:'Nguyễn Thái Học, Cô Giang', hint_en:'Nguyễn Thái Học, Cô Giang', c:[106.6962,10.7660]}
 ];
 PV.area = id => PV.AREAS.find(a => a.id === id) || null;
 /* the starting point used for suggestions and itineraries: {name, c:[lng,lat], gps?} */

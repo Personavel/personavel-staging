@@ -1742,3 +1742,8 @@ body.glass-dark .ad-content{background:rgba(255,255,255,.08)}
 .tilefail b,.tilefail strong{color:#1F2D4C!important}.tilefail .small{color:#4A5B78!important}
 .tilefail :is(li,div,span,p,small,b,strong){color:#3A4A66!important}.tilefail b{color:#1F2D4C!important}
 body.glass-dark .tilefail .muted,.tilefail .muted{color:#4A5B78!important;opacity:1!important}
+
+/* Ô tìm nhanh ở Trang chủ (khách mới hay tìm ở đây trước) */
+.hsearch{display:flex;gap:6px;margin-top:12px}
+.hsearch .input{flex:1;min-width:0;padding:9px 12px}
+.hsearch .btn{flex:none;padding:8px 14px}

@@ -129,7 +129,8 @@ PV.views.home = (m) => {
   <div class="card hello hero" id="hero">${heroBg()}
     <div class="hero-text"><h1><span class="hi">Xin chào,</span><br><span class="nameline"><em>${esc(p?.name||PV.L('Du khách','Traveller'))}</em>!${PV.robot(g,{cls:'namebot'})}</span></h1>
     <div class="hero-box"><p class="muted" style="margin:0 0 12px"><span>Hôm nay</span> <b>${g.name}</b> <span>sẽ đồng hành cùng bạn.</span> <span>${esc(g.greet)}</span></p>
-    <div class="row"><a class="btn notr" href="#chat">${PV.guideOffer ? esc(PV.guideOffer(g.id).cta) : 'Lên lịch trình với ' + g.name}</a><a class="btn ghost" href="#map">Mở bản đồ</a></div></div></div>
+    <div class="row"><a class="btn notr" href="#chat">${PV.guideOffer ? esc(PV.guideOffer(g.id).cta) : 'Lên lịch trình với ' + g.name}</a><a class="btn ghost" href="#map">Mở bản đồ</a></div>
+    <form class="hsearch notr" id="hsf" role="search"><input class="input" id="hq" type="search" enterkeyhint="search" autocomplete="off" aria-label="${PV.L('Tìm địa điểm','Find a place')}" placeholder="${PV.L('Tìm địa điểm, món ăn… vd: Chợ Bến Thành','Find a place or dish… e.g. Ben Thanh Market')}"><button class="btn" type="submit" aria-label="${PV.L('Tìm','Search')}">🔍</button></form></div></div>
   </div>
   <div class="grid g4" style="margin-top:18px">
     <button type="button" class="card stat stat-link" data-act="visited" title="${PV.L('Xem danh sách','See the list')}"><b>${visitedN}</b><span class="muted small">địa điểm đã khám phá</span><i class="stat-go" aria-hidden="true">›</i></button>
@@ -150,6 +151,7 @@ PV.views.home = (m) => {
     </div>
   </div>`;
   PV.bindItems(m); bindHero(m);
+  const hsf = $('#hsf', m); if (hsf) hsf.onsubmit = (e) => { e.preventDefault(); const q = $('#hq', m).value.trim(); if (!q){ $('#hq', m).focus(); return; } PV.pendingSearch = q; location.hash = '#map'; };
   $$('[data-street]', m).forEach(b => b.onclick = () => { PV.pendingStreet = b.dataset.street; location.hash = '#map'; });
   $$('[data-say]', m).forEach(b => b.onclick = () => { const s=D.streets.find(x=>x.id===b.dataset.say); PV.narrate(s, b); PV.markStreet(s.id); });
 };
@@ -320,6 +322,7 @@ PV.views.map = (m) => {
   $('#qgo').onclick = run; $('#q').addEventListener('keydown', e => { if (e.key==='Enter') run(); });
   $('#q').addEventListener('input', e => { const v=e.target.value.trim(); if (v.length>=2) search(v, true); else $('#qres').innerHTML=''; });
   setTimeout(()=>map.invalidateSize(), 200);
+  if (PV.pendingSearch){ const q=PV.pendingSearch; PV.pendingSearch=null; $('#q').value=q; search(q); }
   if (PV.pendingStreet){ const s=D.streets.find(x=>x.id===PV.pendingStreet); PV.pendingStreet=null; if (s) setTimeout(()=>showStreet(s),300); }
   if (PV.pendingPlace){ const id=PV.pendingPlace; PV.pendingPlace=null; setTimeout(()=>PV.focusPlace(id),300); }
   PV._leave = () => { try { map && map.off() && map.remove(); } catch(e){} map = null; };
@@ -455,15 +458,17 @@ function clusterOf(s){ const c = D.clusters.find(c=>c.streets.some(n=>s.name.inc
 /* ---------- TRIP ---------- */
 let tmap;
 PV.views.trip = (m) => {
-  const t = state.trip; if (!t.origin && PV.origin()) t.origin = PV.origin(); PV.retime(t);
+  const t = state.trip; if (!t.origin && PV.origin()) t.origin = PV.origin();
+  if (!t.origin || !(t.origin.gps || PV.area(t.origin.id))){ const a0 = PV.area('ben-thanh'); t.origin = {name:PV.L('Phường ','')+a0.name, c:a0.c, id:a0.id, auto:true}; } // khách mới: chưa chọn thì tạm lấy trung tâm
+  PV.retime(t);
   m.innerHTML = `<h1 class="title">Lịch trình của tôi</h1><p class="sub">Điểm <span class="tag" style="background:#FFE3B8">vàng cam</span> do AI đề xuất · điểm <span class="tag" style="background:#E3DAF6">tím</span> do bạn tự thêm</p>
   <div class="grid g2">
     <div class="card">
       <div class="row"><input class="input" id="tt" value="${esc(t.title)}" style="flex:1;min-width:180px"></div>
       <div class="row" style="margin:10px 0 0"><label class="small" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">🚩 Xuất phát từ <select class="input" id="to" style="width:100%;padding:6px 10px">
         <option value="gps" ${t.origin && t.origin.gps ? 'selected':''}>📍 Vị trí hiện tại của tôi</option>
-        ${PV.AREAS.map(a=>`<option value="${a.id}" ${t.origin && t.origin.id===a.id ? 'selected':''}>Phường ${a.name} – ${a.hint}</option>`).join('')}
-        ${t.origin && (t.origin.gps || PV.area(t.origin.id)) ? '' : '<option value="" selected>— Chọn điểm xuất phát —</option>'}</select></label></div>
+        ${PV.AREAS.map(a=>`<option class="notr" value="${a.id}" ${t.origin && t.origin.id===a.id ? 'selected':''}>${PV.L(`Phường ${a.name} (Q.${a.old} cũ) – ${a.hint}`, `${a.name} ward (old District ${a.old}) – ${a.hint_en||a.hint}`)}</option>`).join('')}</select></label></div>
+      ${t.origin && t.origin.auto ? `<div class="tiny muted" style="margin-top:4px">${PV.L('Đang tạm xuất phát từ trung tâm (Chợ Bến Thành) – đổi ở ô trên nếu bạn ở chỗ khác.','Starting from the city centre (Ben Thanh Market) for now – change it above if you are elsewhere.')}</div>` : ''}
       <div class="row" style="margin:10px 0"><label class="small">Bắt đầu <input class="input" type="time" id="ts" value="${esc(t.start)}" style="width:auto;padding:6px 10px"></label>
         <label class="small">Di chuyển <select class="input" id="tm" style="width:auto;padding:6px 10px">${Object.entries(PV.MODES).map(([k,v])=>`<option value="${k}" ${t.mode===k?'selected':''}>${v.name}</option>`).join('')}</select></label></div>
       <div class="stops" id="stops"></div>
@@ -503,11 +508,11 @@ PV.views.trip = (m) => {
     else { const a = PV.area(v); setO({name:PV.L('Phường ','')+a.name, c:a.c, id:a.id}); } };
   $('#tai').onclick = () => {
     const og = t.origin || PV.origin();
-    if (!og){ PV.toast('Hãy chọn điểm xuất phát trước nhé'); $('#to').focus(); return; }
+    if (!og){ PV.toast('Hãy chọn điểm xuất phát trước nhé'); $('#to').scrollIntoView({block:'center'}); $('#to').focus(); return; }
     const pm = (state.profile?.prefs?.move||[])[0]; const nt = PV.buildTrip({origin: og, mode: t.stops.length || !pm ? t.mode : pm, start: t.start});
     if (!nt){ PV.toast('Chưa tìm được lịch trình phù hợp'); return; }
     nt.origin = Object.assign({}, og); state.trip = nt; PV.retime(nt); PV.save('trip'); PV.views.trip(m);
-    PV.toast('Đã tạo lịch trình gần ' + og.name); };
+    PV.toast(PV.L('Đã tạo lịch trình gần ','Itinerary created near ') + og.name); };
   const tch = $('#tchat'); if (tch) tch.onclick = () => { // lịch trình là việc của Hà → mở thẳng Hà, hỏi bằng ngôn ngữ đang dùng
     const q = PV.L('Gợi ý cho mình lịch trình khám phá Sài Gòn trong một ngày phù hợp với phong cách của mình','Suggest a one-day Saigon itinerary that fits my style');
     if (PV.switchGuide) PV.switchGuide('ha', q); else { PV.pendingAsk = q; location.hash='#chat'; } };

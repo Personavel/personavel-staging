@@ -1747,3 +1747,9 @@ body.glass-dark .tilefail .muted,.tilefail .muted{color:#4A5B78!important;opacit
 .hsearch{display:flex;gap:6px;margin-top:12px}
 .hsearch .input{flex:1;min-width:0;padding:9px 12px}
 .hsearch .btn{flex:none;padding:8px 14px}
+
+/* Bản đồ đang lọc → nói rõ và cho xem tất cả */
+.fnote{margin-top:8px;padding:8px 10px;border-radius:12px;background:#E7F1FB;color:#1F4E79;font-size:13px;line-height:1.45}
+.fnote .linkbtn{color:#1F6FB5;font-weight:600}
+body.glass-dark .fnote{background:rgba(255,255,255,.1);color:var(--ink)}
+body.glass-dark .fnote .linkbtn{color:#BFE0FF!important}

@@ -25,6 +25,7 @@ const setArea = (slug) => {
   if (v === 'collection') filterCollection();
   $$('.ar-btn').forEach(paintBtn);
 };
+PV.areaClear = () => setArea(null);
 const label = (a) => a ? `${a.ward.replace(/^Phường /, T_('Phường ', 'Ward '))}` : T_('Tất cả khu vực', 'All areas');
 const sub = (a) => a && a.district_old ? T_(`trước đây ${a.district_old}`, `formerly ${a.district_old.replace(/^Quận /, 'District ')}`) : '';
 const paintBtn = (b) => { const a = AREAS && AREAS.areas.find(x => x.slug === PV.areaSel());

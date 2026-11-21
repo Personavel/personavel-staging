@@ -262,7 +262,7 @@ let map, layer, tripLayer, streetLayer, meMarker;
 const active = new Set(Object.keys(CATS));
 let budgetMax = 3, onlyRec = null, TOP = new Set(); const TOPN = 15;
 PV.views.map = (m) => {
-  if (onlyRec === null) onlyRec = !!(state.profile && state.profile.prefs);
+  if (onlyRec === null) onlyRec = false; // luôn mở ở "Tất cả" – trước mở ở "Gợi ý" khiến người đã làm phân tích phong cách tưởng mất địa điểm
   m.innerHTML = `<div class="row" style="margin-bottom:12px"><div><h1 class="title">Bản đồ khám phá</h1><p class="sub" style="margin:0">Khu trung tâm: Sài Gòn, Tân Định, Bến Thành, Cầu Ông Lãnh, Xuân Hòa, Nhiêu Lộc, Bàn Cờ</p></div></div>
   <div class="mapwrap ${PV.store.get('mapPanelHidden', false) ? 'collapsed' : ''}" id="mapwrap">
     <div class="panel">
@@ -307,6 +307,8 @@ PV.views.map = (m) => {
   $$('[data-b]', m).forEach(el => el.onclick = () => { budgetMax=+el.dataset.b; $$('[data-b]',m).forEach(x=>x.classList.toggle('on', x===el)); drawPlaces(); });
   const setRec = (v) => { onlyRec = v; $('#onlyrec').classList.toggle('on', v); $$('#maplegend [data-mode]').forEach(b => b.classList.toggle('on', (b.dataset.mode==='rec') === v)); drawPlaces(); };
   $('#onlyrec').onclick = () => setRec(!onlyRec);
+  PV.mapShowAll = () => { Object.keys(CATS).forEach(k => active.add(k)); $$('[data-cat]', m).forEach(el => el.classList.add('on'));
+    budgetMax = 3; $$('[data-b]', m).forEach(x => x.classList.toggle('on', x.dataset.b === '3')); setRec(false); };
   $$('#maplegend [data-mode]').forEach(b => b.onclick = (e) => { e.stopPropagation(); setRec(b.dataset.mode==='rec'); });
   L.DomEvent && L.DomEvent.disableClickPropagation($('#maplegend'));
   const og0 = PV.origin(); if (og0 && !mv && !PV.pendingPlace && !PV.pendingStreet) map.setView([og0.c[1], og0.c[0]], 15, {animate:false});
@@ -361,7 +363,14 @@ function drawPlaces(){
   $('#plist').innerHTML = (sorted.slice(0,lim).map(PV.pitem).join('') || '<div class="empty small">Không có địa điểm phù hợp bộ lọc</div>')
     + (sorted.length > lim && lim < 40 ? `<button class="btn ghost sm morebtn" id="plmore">Xem thêm ${Math.min(40, sorted.length) - lim} địa điểm</button>` : '');
   const pm = $('#plmore'); if (pm) pm.onclick = () => { PV._listAll = true; drawPlaces(); };
-  $('#cnt').textContent = list.length + ' địa điểm';
+  const all = D.places.filter(p => p.coords).length;
+  $('#cnt').textContent = list.length < all ? `${list.length}/${all} ${PV.L('địa điểm','places')}` : `${list.length} ${PV.L('địa điểm','places')}`;
+  let fn = $('#fnote'); if (!fn){ fn = document.createElement('div'); fn.id = 'fnote'; fn.className = 'fnote notr'; $('#plist').before(fn); }
+  const why = [onlyRec && PV.L('chỉ gợi ý theo phong cách','style picks only'), PV.areaSel && PV.areaSel() && PV.L('một khu vực','one area'),
+    active.size < Object.keys(CATS).length && PV.L('một số loại','some categories'), budgetMax < 3 && PV.L('ngân sách','budget')].filter(Boolean);
+  fn.hidden = !(why.length && list.length < all);
+  if (!fn.hidden){ fn.innerHTML = `${PV.L('Đang lọc','Filtered')}: ${why.join(', ')} · <button class="linkbtn" type="button">${PV.L('Xem tất cả ' + all + ' địa điểm','Show all ' + all + ' places')}</button>`;
+    fn.querySelector('button').onclick = () => { if (PV.areaClear && PV.areaSel && PV.areaSel()) PV.areaClear(); PV.mapShowAll && PV.mapShowAll(); }; }
   PV.bindItems($('#plist'));
 }
 PV.refreshMapTrip = () => {

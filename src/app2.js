@@ -496,7 +496,7 @@ PV.views.trip = (m) => {
       <div class="small muted">${s.arrive||''} – ${s.leave||''} · ${esc(p.kind)} · ${PV.priceText(p.price_level)}</div>
       ${dw?`<div class="small dowhat">${esc(dw)}</div>`:''}
       ${s.tag?`<span class="tag meal">${s.tag.startsWith('Ăn vặt')?'🍡':'🍽️'} ${esc(s.tag)}</span>`:''}
-      ${(()=>{ const h=PV.parseHours(p); const a=PV.toMin(s.arrive||'0:0'); return h && (a<h[0]||a>h[1]) ? '<span class="tag warn">Có thể ngoài giờ mở cửa</span>' : ''; })()}
+      ${(()=>{ const a=PV.toMin(s.arrive||'0:0'); return PV.hourRanges(p) && !PV.openFor(p, a, 20) ? '<span class="tag warn">Có thể ngoài giờ mở cửa</span>' : ''; })()}
       <span class="tag">${s.by==='me'?'Bạn tự thêm':'AI đề xuất'}</span>
       ${(()=>{ if(!PV.placeTips) return ''; const k=PV.placeTips(p).filter(x=>/👔|👘|👜|🕯️|🏫|🎭|🏗️|⚠️/.test(x[0])).slice(0,2); return k.length?`<div class="stoptips">${k.map(x=>`<span>${x[0]} ${x[1]}</span>`).join('')}</div>`:''; })()}</div>
       <div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn ghost sm" data-up="${i}" aria-label="Lên">${ICON.up.replace('<svg','<svg width=14 height=14')}</button><button class="btn ghost sm" data-dn="${i}" aria-label="Xuống">${ICON.down.replace('<svg','<svg width=14 height=14')}</button><button class="btn ghost sm" data-rm="${i}" aria-label="Xóa">${ICON.x.replace('<svg','<svg width=14 height=14')}</button></div></div>`; }).join('');

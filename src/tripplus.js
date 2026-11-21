@@ -55,11 +55,12 @@ PV.planCheck = (t) => {
   const st = PV.toMin(t.start || '08:00'), end = PV.toMin(t.stops[t.stops.length-1].leave || t.start);
   const span = end - st;
   // opening hours
-  t.stops.forEach((s, i) => { const p = PV.byId(s.id); const h = p && PV.parseHours(p); const a = PV.toMin(s.arrive || '0:0');
-    if (h && (a < h[0] || a > h[1] - 20)) W.push(T_(`Điểm ${i+1} (${nm(p)}) có thể chưa mở hoặc sắp đóng lúc ${s.arrive} – nên đổi giờ hoặc đổi thứ tự.`, `Stop ${i+1} (${nm(p)}) may be closed or about to close at ${s.arrive} – change the time or order.`)); });
+  t.stops.forEach((s, i) => { const p = PV.byId(s.id); const a = PV.toMin(s.arrive || '0:0');
+    if (p && PV.hourRanges(p) && !PV.openFor(p, a, 20)) W.push(T_(`Điểm ${i+1} (${nm(p)}) có thể chưa mở hoặc sắp đóng lúc ${s.arrive} – nên đổi giờ hoặc đổi thứ tự.`, `Stop ${i+1} (${nm(p)}) may be closed or about to close at ${s.arrive} – change the time or order.`)); });
   if (span > 11 * 60) W.push(T_(`Lịch trình kéo dài ${Math.round(span/60)} tiếng – khá mệt, nên bỏ bớt 1–2 điểm.`, `The day lasts ${Math.round(span/60)} hours – tiring; drop 1–2 stops.`));
   else OK.push(T_(`Thời lượng hợp lý: khoảng ${Math.floor(span/60)} giờ ${span%60} phút.`, `Reasonable length: about ${Math.floor(span/60)} h ${span%60} min.`));
-  if (t.stops.length > 7) W.push(T_(`${t.stops.length} điểm trong một ngày là hơi dày – mỗi nơi sẽ rất vội.`, `${t.stops.length} stops in a day is a lot – each visit will feel rushed.`));
+  const sightsN = t.stops.filter(s => !(PV.foodType && PV.foodType(PV.byId(s.id)))).length;   // quán ăn không tính là điểm tham quan
+  if (sightsN > 7) W.push(T_(`${sightsN} điểm tham quan trong một ngày là hơi dày – mỗi nơi sẽ rất vội.`, `${sightsN} sights in a day is a lot – each visit will feel rushed.`));
   // long walks
   if (t.mode === 'walk') t.stops.forEach((s, i) => { if (s.leg && s.leg.km > 2) W.push(T_(`Chặng đến điểm ${i+1} dài ${PV.fmtKm(s.leg.km)} – nên gọi xe cho chặng này.`, `The walk to stop ${i+1} is ${PV.fmtKm(s.leg.km)} – take a ride for this leg.`)); });
   // midday sun outdoors
@@ -69,7 +70,14 @@ PV.planCheck = (t) => {
   const meals = t.stops.filter(s => PV.foodType && PV.foodType(PV.byId(s.id)) === 'meal').map(s => PV.toMin(s.arrive||'0:0'));
   if (st <= 11*60+30 && end >= 13*60 && !meals.some(m => m >= 10*60+45 && m <= 14*60)) W.push(T_('Lịch trình đi qua giờ trưa nhưng chưa có bữa trưa.', 'The plan covers lunchtime but has no lunch stop.'));
   if (st <= 18*60 && end >= 19*60+30 && !meals.some(m => m >= 17*60 && m <= 21*60)) W.push(T_('Lịch trình đi qua giờ tối nhưng chưa có bữa tối.', 'The plan covers dinnertime but has no dinner stop.'));
-  if (meals.length) OK.push(T_('Bữa ăn được xếp cách nhau hợp lý.', 'Meals are spaced sensibly.'));
+  // hai lần ăn quá sát nhau (người dùng tự thêm quán): bữa chính cách bữa chính < 3 giờ, hoặc mọi lần ăn cách nhau < 1,5 giờ
+  let lastF = null, close = 0;
+  t.stops.forEach((s, i) => { const p = PV.byId(s.id), ft = PV.foodType && PV.foodType(p); if (!ft) return;
+    const a = PV.toMin(s.arrive || '0:0');
+    if (lastF){ const gap = a - lastF.leave; if (gap < 90 || (ft === 'meal' && lastF.ft === 'meal' && gap < 180)){ close++;
+      W.push(T_(`Điểm ${lastF.i+1} và điểm ${i+1} đều là ăn uống, chỉ cách nhau ${Math.max(0, gap)} phút – lúc đó còn no, nên dời một quán sang bữa khác.`, `Stops ${lastF.i+1} and ${i+1} are both food, only ${Math.max(0, gap)} min apart – you will still be full; move one to another meal.`)); } }
+    lastF = {i, ft, leave: PV.toMin(s.leave || s.arrive || '0:0')}; });
+  if (meals.length && !close) OK.push(T_('Bữa ăn được xếp cách nhau hợp lý.', 'Meals are spaced sensibly.'));
   // traffic on each leg
   let prev = t.origin ? t.origin.c : null; const seen = new Set(); let rush = 0;
   t.stops.forEach((s, i) => { const p = PV.byId(s.id); if (!p) return; const dep = PV.toMin(s.arrive||'0:0') - (s.leg ? s.leg.min : 0);

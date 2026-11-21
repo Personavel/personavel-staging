@@ -250,7 +250,7 @@ PV.chatCore = (root) => {
     const me = {r:'me', t:text}; state.chat.push(me); msgs.insertAdjacentHTML('beforeend', bubble(me));
     const ty = document.createElement('div'); ty.className='msg'; ty.innerHTML=`<div class="av">${PV.robot(PV.todayGuide(),{wave:false})}</div><div class="bubble typing"><span></span><span></span><span></span></div>`; msgs.appendChild(ty); msgs.scrollTop=msgs.scrollHeight;
     let res; try { res = await PV.answer(text); } catch(e){ res = PV.localAnswer(text); res.t = PV.L('(Không kết nối được AI, mình trả lời bằng kho dữ liệu.)\n','(Could not reach the AI, answering from the database.)\n') + res.t; }
-    ty.remove(); res.r='bot'; res.g=PV.todayGuide().id; state.chat.push(res); state.chat = state.chat.slice(-60); PV.save('chat');
+    ty.remove(); res.r='bot'; res.g=res.by||PV.todayGuide().id; state.chat.push(res); state.chat = state.chat.slice(-60); PV.save('chat');
     if (!document.body.contains(msgs)) return;
     msgs.insertAdjacentHTML('beforeend', bubble(res)); bindCards(msgs); msgs.scrollTop=msgs.scrollHeight;
   }
@@ -270,7 +270,7 @@ PV.chatCore = (root) => {
     if (c.trip) extra += `<div class="tripcard"><b>🗺️ ${esc(c.trip.title)}</b><div class="tiny muted">Bắt đầu ${c.trip.start} · ${PV.MODES[c.trip.mode]?.name||''} · ~${PV.fmtKm(c.trip.km||0)} · ~${PV.fmtVnd(c.trip.cost||0)}/người</div>
       <ol>${c.trip.stops.map(s=>{const p=PV.byId(s.id); return p?`<li><b>${s.arrive||''}</b> <span data-pid="${p.id}" style="cursor:pointer;text-decoration:underline dotted">${esc(p.name)}</span>${s.tag?` <span class="tag meal">${s.tag.startsWith('Ăn vặt')?'🍡':'🍽️'} ${esc(s.tag)}</span>`:''} <span class="tiny muted">(${s.stay||p.visit_min} phút${s.leg?' · đi '+s.leg.min+' phút':''})</span></li>`:'';}).join('')}</ol>
       <div class="row"><button class="btn sm" data-usetrip="${idx}">Lưu lịch trình</button><button class="btn ghost sm" data-adjust="${idx}">Điều chỉnh lịch trình</button></div></div>`;
-    if (c.ask){ const to = PV.GUIDES.find(x=>x.id===c.ask.g); if (to) extra += `<div class="askg"><button class="btn sm" type="button" data-askg="${to.id}" data-askq="${idx}">${PV.robot(to,{wave:false}).replace('<svg','<svg style="width:22px;height:22px;flex:0 0 22px" aria-hidden="true"')} ${PV.L('Hỏi','Ask')} ${esc(to.name)}</button></div>`; }
+    if (c.ask && !c.ask.done){ const to = PV.GUIDES.find(x=>x.id===c.ask.g); if (to) extra += `<div class="askg"><button class="btn sm" type="button" data-askg="${to.id}" data-askq="${idx}">${PV.robot(to,{wave:false}).replace('<svg','<svg style="width:22px;height:22px;flex:0 0 22px" aria-hidden="true"')} ${PV.L('Hỏi','Ask')} ${esc(to.name)}</button></div>`; }
     if (c.sources && c.sources.length) extra += `<div class="src">📚 Nguồn tham khảo: ${c.sources.map(s=>s.url?`<a href="${esc(PV.safeUrl(s.url))}" target="_blank" rel="noopener">${esc(s.name)}</a>`:esc(s.name)).join(' · ')}</div>`;
     return `<div class="msg"><div class="av">${PV.robot(g,{wave:false})}</div><div class="bubble">${esc(c.t)}${extra}<div style="margin-top:6px"><button class="btn ghost sm" data-say2="${idx}" title="Nghe">${ICON.speaker.replace('<svg','<svg width=14 height=14')}</button></div></div></div>`;
   }
@@ -373,6 +373,18 @@ PV.localAnswer = (text) => {
   // specific place
   const keyOf = p => [PV.norm(p.name.split(/[–(-]/)[0].trim()), p.name_en ? PV.norm(p.name_en.split('(')[0].trim()) : null].filter(Boolean);
   const pl = D.places.slice().sort((a,b)=>b.name.length-a.name.length).find(p => !EX.has(p.id) && keyOf(p).some(k => k.length>3 && W.includes(' '+k.replace(/[^a-z0-9]+/g,' ').trim()+' ')));
+  // "ăn gì gần Chợ Bến Thành", "chụp ảnh quanh Dinh Độc Lập": gợi ý các điểm gần điểm được nhắc tới, không giới thiệu lại chính nó
+  const nearQ = has('gan','quanh','ke ben','canh','gan do','xung quanh','near','nearby','around','close to');
+  const foodQ = has('an','an gi','quan an','an uong','an ngon','ngon','do an','mon','eat','food','restaurant','pho','banh mi','dessert','snack');
+  const photoQ = has('chup anh','check in','song ao','photo','photos','instagram');
+  if (pl && pl.coords && nearQ && (foodQ || photoQ)) {
+    const ok = q => foodQ ? !!PV.foodType(q) : q.cats.includes('checkin');
+    const near = D.places.filter(q => q.id !== pl.id && q.coords && !EX.has(q.id) && ok(q)).map(q => [q, PV.dist(pl.coords, q.coords)])
+      .filter(([, d]) => d <= 1.5).sort((a, b) => a[1] - b[1]).slice(0, 5);
+    if (near.length) return {t: L(`Quanh ${pl.name} có mấy ${foodQ ? 'quán ngon' : 'góc chụp đẹp'} này (xếp từ gần tới xa):\n` + near.map(([q, d]) => `• ${q.name} – ${PV.fmtKm(d)}${foodQ && PV.foodType(q) === 'snack' ? ' (ăn vặt)' : ''}`).join('\n'),
+      `Near ${nm(pl)}, try these ${foodQ ? 'places to eat' : 'photo spots'} (closest first):\n` + near.map(([q, d]) => `• ${nm(q)} – ${PV.fmtKm(d)}${foodQ && PV.foodType(q) === 'snack' ? ' (snack)' : ''}`).join('\n')),
+      places: near.map(([q]) => q.id)};
+  }
   if (pl && !has('lich trinh','ke hoach','itinerary','plan')) {
     const hours = L((pl.hours||[])[0], (pl.hours_en||[])[0] || PV.tr((pl.hours||[])[0]));
     const price = L((pl.price||[])[0], (pl.price_en||[])[0] || PV.tr((pl.price||[])[0])) || PV.tr(PV.priceText(pl.price_level));

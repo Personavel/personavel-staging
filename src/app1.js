@@ -91,13 +91,22 @@ PV.origin = () => {
 /* ---------- time helpers ---------- */
 PV.toMin = t => { const [h,m]=String(t).split(':').map(Number); return h*60+(m||0); };
 PV.fmtT = m => { m=((m%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); };
-PV.parseHours = p => { // first open range found, minutes
+// Mọi khung giờ mở cửa trong dòng giờ đầu tiên có giờ cụ thể (ví dụ "7h00–12h00, 14h00–17h00"), tính bằng phút
+PV.hourRanges = p => {
   for (const line of (p.hours||[])){
-    if (/không tham quan|đóng cửa để sửa/i.test(line) && !/\d/.test(line.split(':')[0])) continue;
-    const m = line.match(/(\d{1,2})\s*[:h]\s*(\d{2})?\s*[–\-—]\s*(\d{1,2})\s*[:h]\s*(\d{2})?/);
-    if (m){ let o=+m[1]*60+(+m[2]||0), c=+m[3]*60+(+m[4]||0); if (c<=o) c+=1440; return [o,c]; }
+    const re = /(\d{1,2})\s*[:h]\s*(\d{2})?\s*[–\-—]\s*(\d{1,2})\s*[:h]\s*(\d{2})?/g; const out = []; let m;
+    while ((m = re.exec(line))){ const o = +m[1]*60+(+m[2]||0); let c = +m[3]*60+(+m[4]||0); if (c<=o) c+=1440; out.push([o,c]); }
+    if (out.length) return out;
   }
   return null;
+};
+PV.parseHours = p => { const r = PV.hourRanges(p); return r ? [r[0][0], r[r.length-1][1]] : null; }; // giờ mở sớm nhất – đóng muộn nhất
+// Tới lúc arr, ở khoảng stay phút: điểm có đang mở không? (điểm tham quan không ghi giờ: chỉ ban ngày 7h–17h30)
+PV.openFor = (p, arr, stay) => {
+  const r = PV.hourRanges(p), need = Math.min(stay || 30, 45);
+  if (r) return r.some(([o, c]) => arr >= o - 60 && Math.max(arr, o) + need <= c);
+  if (p.cats && p.cats.includes('history') && !PV.foodType(p)) return arr >= 7*60 && arr + need <= 17*60+30;
+  return true;
 };
 
 /* ---------- robots (original mascot) ---------- */
@@ -231,7 +240,7 @@ PV.buildTrip = (o={}) => {
   const cHours = custom2 && cStart && +custom2[1] < 25 && +custom2[1] > +custom[1] ? (+custom2[1] - +custom[1]) : null;
   const start = PV.toMin(o.start || cStart || (pr.time==='night'?'17:00': pr.time==='evening'?'14:00':'08:00'));
   const hours = o.hours || cHours || (pr.time==='night'||pr.time==='evening' ? 6 : pr.time==='morning' ? 5 : 9);
-  const end = start + hours*60;
+  const end = Math.min(start + hours*60, Math.max(22*60, start + 3*60));   // không xếp tham quan quá 22h (trừ khi khách bắt đầu rất muộn)
   const mode = o.mode || (pr.move||[])[0] || 'moto';
   const pace = o.pace || pr.pace || 'normal';
   const maxStops = o.stops || (pace==='many'?8 : pace==='slow'?5 : 6);
@@ -247,14 +256,15 @@ PV.buildTrip = (o={}) => {
   // anchor: must-visit or best near origin / centre
   const centre = [106.6985, 10.7765];
   const inMealAt = (m) => [[6*60+30, 10*60], [10*60+45, 14*60], [17*60, 21*60]].some(([x,y]) => m >= x && m <= y);
-  const anchorPool = pool.filter(p => !PV.foodType(p) || (PV.foodType(p) === 'meal' && inMealAt(start)));
+  const anchorPool = pool.filter(p => (!PV.foodType(p) || (PV.foodType(p) === 'meal' && inMealAt(start))) && PV.openFor(p, start + 10, p.visit_min));
   let cur = must[0] || (anchorPool.length ? anchorPool : pool).slice().sort((a,b)=> (scored.get(b.id) - (origin?PV.dist(origin,b.coords)*.25:0)) - (scored.get(a.id) - (origin?PV.dist(origin,a.coords)*.25:0)))[0];
   if (!cur) return null;
   const stops = []; let t = start; let prev = origin;
   const used = new Set();
-  // eating rhythm: a real meal at most every ~2.5 h; desserts / snacks need ~45 min after any food, max 2
+  // nhịp ăn như người thật: hai bữa chính cách nhau ≥ 3,5 giờ; ăn vặt cách mọi lần ăn ≥ 2 giờ, tối đa 1 lần
+  // (2 lần nếu đi ≥ 10 giờ) và không ăn vặt sát trước một bữa chính chưa ăn; bữa chính cách lần ăn vặt ≥ 1,5 giờ
   const MEALS = [[6*60+30, 10*60, 'Ăn sáng'], [10*60+45, 14*60, 'Ăn trưa'], [17*60, 21*60, 'Ăn tối']];
-  const MEAL_GAP = 150, SNACK_GAP = 45, MAX_SNACK = 2;
+  const MEAL_GAP = 210, AFTER_SNACK = 90, SNACK_GAP = 120, MAX_SNACK = hours >= 10 ? 2 : 1;
   let lastMealEnd = -1e9, lastFoodEnd = -1e9, snacks = 0, meals = 0;
   const mealWindow = (m) => MEALS.find(([a,b]) => m >= a && m <= b);
   const addStop = (p) => {
@@ -263,7 +273,10 @@ PV.buildTrip = (o={}) => {
     const hrs = PV.parseHours(p);
     let wait = 0;
     if (hrs && t < hrs[0] && hrs[0]-t < 90) { wait = hrs[0]-t; t = hrs[0]; }
-    const arrive = t; const stay = Math.round((p.visit_min || 45)*stayK/5)*5; t += stay;
+    const arrive = t; let stay = Math.round((p.visit_min || 45)*stayK/5)*5;
+    const rg = PV.hourRanges(p), inR = rg && rg.find(([a, c]) => arrive >= a - 5 && arrive < c);
+    if (inR && arrive + stay > inR[1]) stay = Math.max(20, Math.floor((inR[1] - arrive)/5)*5);   // về trước giờ đóng cửa
+    t += stay;
     const ft = PV.foodType(p); let tag = null;
     if (ft === 'meal'){ const mw = mealWindow(arrive); tag = mw ? mw[2] : 'Bữa ăn'; lastMealEnd = t; lastFoodEnd = t; meals++; }
     else if (ft === 'snack'){ tag = arrive >= 13*60+30 && arrive < 17*60+30 ? 'Ăn vặt chiều' : 'Ăn vặt / tráng miệng'; lastFoodEnd = t; snacks++; }
@@ -272,7 +285,8 @@ PV.buildTrip = (o={}) => {
   };
   addStop(cur);
   must.slice(1).forEach(p => { if (!used.has(p.id)) addStop(p); });
-  while (stops.length < maxStops && t < end - 30){
+  const sights = () => stops.filter(x => !x.tag).length;    // số điểm tham quan – quán ăn không chiếm chỗ, để không bỏ bữa chính
+  while (sights() < maxStops && stops.length < maxStops + 3 && t < end - 30){
     let best=null, bs=-1e9;
     for (const p of pool){
       if (used.has(p.id)) continue;
@@ -283,18 +297,18 @@ PV.buildTrip = (o={}) => {
       const ft = PV.foodType(p);
       if (ft === 'meal'){
         const sinceMeal = arr - lastMealEnd, win = mealWindow(arr);
-        if (sinceMeal < MEAL_GAP || arr - lastFoodEnd < 60) s -= 100;        // still full – no second meal yet (and not right after a snack)
+        if (sinceMeal < MEAL_GAP || arr - lastFoodEnd < AFTER_SNACK) s -= 100;   // còn no – chưa ăn bữa nữa (kể cả ngay sau ăn vặt)
         else if (win) s += (stops.some(x => x.tag === win[2]) ? -100 : 2.4);   // one breakfast / lunch / dinner each
         else if (!meals && arr - start > 240) s += .8;                        // long trip without food: allow a late meal
         else s -= 100;                                                        // no full meals outside meal times
       } else if (ft === 'snack'){
-        if (arr - lastFoodEnd < SNACK_GAP) s -= 100;
+        const soon = mealWindow(arr) || mealWindow(arr + 75);                                       // đang/sắp tới giờ một bữa chính
+        if (arr - lastFoodEnd < SNACK_GAP) s -= 100;                                                // vừa ăn xong
         else if (snacks >= MAX_SNACK) s -= 100;
-        else if (mealWindow(arr) && !stops.some(x => x.tag === mealWindow(arr)[2]) && arr - lastMealEnd >= MEAL_GAP) s -= 1.5; // it's mealtime: prefer a real meal
-        else s += (arr >= 14*60 && arr <= 17*60+30) || arr - lastMealEnd < 120 ? .9 : .2;  // afternoon snack or dessert after a meal
+        else if (soon && !stops.some(x => x.tag === soon[2]) && arr < end - 90) s -= 100;           // để bụng cho bữa chính sắp tới
+        else s += (arr >= 14*60 && arr <= 17*60) || arr >= 19*60+30 ? .9 : .2;                     // ăn vặt chiều hoặc tráng miệng tối
       }
-      const hrs = PV.parseHours(p);
-      if (hrs && (arr < hrs[0]-60 || arr + 20 > hrs[1])) s -= 3;
+      if (!PV.openFor(p, arr, Math.round((p.visit_min || 45)*stayK))) s -= 100;   // tới nơi lúc chưa mở / sắp đóng cửa → không xếp
       if (/sau giờ học/i.test((p.hours||[]).join(' ')) && arr < 16*60) s -= 3;
       if (s > bs){ bs = s; best = p; }
     }

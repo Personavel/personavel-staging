@@ -34,7 +34,7 @@ const CASES = {
   },
   kiet: {
     own: ['Góc check-in đẹp', 'Mua quà lưu niệm ở đâu?', 'Chụp ảnh hoàng hôn ở đâu?', 'Mua sắm thời trang', 'Chụp ảnh áo dài ở đâu đẹp?', 'where to buy souvenirs', 'song ao o dau dep', 'Đặc sản mua làm quà ở đâu?'],
-    out: [['Đường Nguyễn Huệ có ý nghĩa gì?', 'an'], ['Quán ốc nào ngon?', 'uyen'], ['Đi Grab từ Quận 1 tới sân bay bao nhiêu tiền?', 'ha'], ['Chùa Vĩnh Nghiêm có kiến trúc gì đặc biệt?', 'phuong'],
+    out: [['Ăn gì ngon gần chợ Bến Thành?', 'uyen'], ['Lên lịch trình đi chợ Bến Thành rồi Nhà thờ Đức Bà', 'ha'], ['Đường Nguyễn Huệ có ý nghĩa gì?', 'an'], ['Quán ốc nào ngon?', 'uyen'], ['Đi Grab từ Quận 1 tới sân bay bao nhiêu tiền?', 'ha'], ['Chùa Vĩnh Nghiêm có kiến trúc gì đặc biệt?', 'phuong'],
           ['Bitcoin hôm nay giá bao nhiêu?', 'off'], ['Đi Hội An mua gì?', 'off']]
   },
   phuong: {

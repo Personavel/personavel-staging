@@ -122,7 +122,8 @@ PV.routeChat = (text, guideId, ctx = {}) => {
   let set = Object.keys(scores);
   if (!set.length) set = [...placeSet];
   if (!set.length) return {verdict: 'own', scores, unclear: !travel};   // nothing recognisable: this guide answers with what it can do
-  if (set.includes(guideId)) return {verdict: 'own', scores};
+  const top = Math.max(0, ...Object.values(scores));
+  if (set.includes(guideId) && (!top || (scores[guideId] || 0) >= top)) return {verdict: 'own', scores};   // ngang điểm: mình trả lời
   const best = set.slice().sort((a, b) => (scores[b] || 0) - (scores[a] || 0) || ORDER.indexOf(a) - ORDER.indexOf(b))[0];
   return {verdict: 'other', to: best, scores};
 };
@@ -197,9 +198,16 @@ PV.answer = async (text) => {
   if (r.verdict === 'off') return {t: T_(`Xin lỗi, mình chỉ giúp được về du lịch TP.HCM thôi – địa điểm, ăn uống, lịch trình, văn hóa, chụp ảnh. Bạn hỏi mình về chuyến đi của bạn nhé!`,
     `Sorry, I can only help with travelling in Ho Chi Minh City – places, food, itineraries, culture and photos. Ask me about your trip!`), off: true};
   if (r.verdict === 'other'){
+    // Câu thuộc phạm vi trợ lý khác → trợ lý đó trả lời LUÔN trong cuộc trò chuyện này (không bắt khách bấm chuyển, không phải hỏi lại)
     const to = PV.GUIDES.find(x => x.id === r.to);
-    return {t: T_(`Câu này về ${PV.GUIDE_TOPIC(r.to)} – ${to.name} rành hơn mình nhiều! Mình chuyên về ${PV.GUIDE_TOPIC(g.id)}. Bấm “Hỏi ${to.name}” để chuyển câu hỏi sang ${to.name} nhé.`,
-      `That one is about ${PV.GUIDE_TOPIC(r.to)} – ${to.name} knows it much better! I look after ${PV.GUIDE_TOPIC(g.id)}. Tap “Ask ${to.name}” to pass your question on.`), ask: {g: r.to, q: text}};
+    if (!to) return _answer(text);
+    const keep = PV.todayGuide; let ans;
+    PV.todayGuide = () => to;                     // trả lời bằng giọng và phạm vi của người phụ trách
+    try { ans = await _answer(text); } finally { PV.todayGuide = keep; }
+    ans = Object.assign({}, ans);
+    ans.t = T_(`${to.name} đây! Câu này về ${PV.GUIDE_TOPIC(r.to)} nên mình trả lời luôn nhé.\n\n`, `${to.name} here! This one is about ${PV.GUIDE_TOPIC(r.to)}, so I'll take it.\n\n`) + (ans.t || '');
+    ans.by = to.id; ans.ask = {g: r.to, q: text, done: true};
+    return ans;
   }
   return _answer(text);
 };

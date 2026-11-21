@@ -67,8 +67,10 @@ const SMALL = ['xin chao','chao','hello','hi','hey','alo','cam on','thank','than
   'duoc','vang','da','co','khong','ko','yes','no','thoi','u','uk','good morning','good evening'];
 const FILLER = ['ban','minh','nhe','nha','a','oi','toi','em','anh','chi','nhieu','qua','lam','robot','bot','an','uyen','ha','kiet','phuong','xin','nhe','ne','luon','buoi','sang','trua','toi','chieu','nhe','nhes','the','there'];
 const FOLLOW = ['o dau','dia chi','may gio','gia','bao nhieu','quan thu','cho thu','cai thu','thu nhat','thu hai','thu 2','thu ba','dau tien','con nua','con khong','khac khong','cho khac','quan khac','goi y them','ke them','noi them',
-  'chi tiet','them vao lich trinh','chi duong','nam o dau','where','address','how much','price','more','another','the first','the second','tell me more','add it','directions'];
-const ADJUST = ['bo ','thay ','them ','doi ','dieu chinh','di bo thoi','remove','skip','drop','instead','adjust','change','add '];
+  'chi tiet','them vao lich trinh','chi duong','nam o dau','where','address','how much','price','more','another','the first','the second','tell me more','add it','directions',
+  'mo cua','dong cua','gio mo cua','gia ve','ve','re hon','cho nao nua','quan nao nua','where is it','opening hours','open','hours','ticket','tickets','cheaper','something cheaper','other','others','any other'];
+const ADJUST = ['bo ','thay ','them ','doi ','dieu chinh','di bo thoi','remove','skip','drop','instead','adjust','change','add ',
+  'ngay 2','ngay thu 2','ngay thu hai','ngay 3','ngay tiep','ngay mai','hom sau','day 2','day two','day 3','next day','second day','tomorrow'];
 
 const has = (hay, list) => list.filter(w => hay.includes(' ' + w.trim() + ' ')).length;
 let PLACES = null, STREETS = null;
@@ -115,8 +117,15 @@ PV.routeChat = (text, guideId, ctx = {}) => {
   if (nWords <= 6){ let rest = F, hit = false;
     for (const w of SMALL.slice().sort((a, b) => b.length - a.length)){ while (rest.includes(' ' + w + ' ')){ rest = rest.replace(' ' + w + ' ', ' '); hit = true; } }
     if (hit && rest.trim().split(' ').every(w => !w || FILLER.includes(w))) return {verdict: 'any', scores}; }
-  if (ctx.lastPlaces && nWords <= 7 && has(F, FOLLOW) && !named.length) return {verdict: 'any', scores};
-  if (ctx.lastTrip && ADJUST.some(w => (' ' + F.trim() + ' ').startsWith(' ' + w) || F.includes(' ' + w.trim() + ' ')) && nWords <= 10) return {verdict: 'any', scores};
+  // hỏi tiếp về chỗ vừa gợi ý ("mấy giờ mở cửa?", "opening hours?") – chỉ khi bỏ các từ hỏi tiếp đi thì không còn chủ đề mới
+  // ("chụp ảnh ở đâu đẹp?", "bánh mì ở đâu ngon?" là câu hỏi MỚI, không phải hỏi tiếp)
+  if (ctx.lastPlaces && nWords <= 7 && has(F, FOLLOW) && !named.length){
+    let F2 = F; for (const w of FOLLOW.slice().sort((a, b) => b.length - a.length)) F2 = F2.split(' ' + w + ' ').join(' ');
+    const fresh = Object.entries(TOPICS).some(([, t]) => has(F2, t.F) || (plain && has(F2, t.P)));
+    if (!fresh) return {verdict: 'any', scores, follow: 'places'}; }
+  if (ctx.lastTrip && ADJUST.some(w => (' ' + F.trim() + ' ').startsWith(' ' + w) || F.includes(' ' + w.trim() + ' ')) && nWords <= 10){
+    const cmd = ADJUST.some(w => (' ' + F.trim() + ' ').startsWith(' ' + w)) || /\b(ngay (2|3|thu|tiep|mai)|hom sau|day (2|3|two)|next day|second day|tomorrow)\b/.test(F);
+    if (cmd) return {verdict: 'any', scores, follow: 'trip'}; }   // "kể thêm về Dinh Độc Lập" không phải lệnh sửa lịch trình → xét chủ đề như thường
 
   // the guides this question belongs to: topic words first, then the category of a named place
   let set = Object.keys(scores);
@@ -178,7 +187,7 @@ const T_ = (vi, en) => PV.L(vi, en);
 const S = PV.store;
 let chats = S.get('chats', null);
 if (!chats || typeof chats !== 'object'){ chats = {}; const old = S.get('chat', null); if (Array.isArray(old) && old.length) chats[PV.todayGuide().id] = old; }
-const cur = () => PV.todayGuide().id;
+const cur = () => PV._chatOwner || PV.todayGuide().id;   // khi trợ lý khác trả lời hộ, vẫn đọc/ghi cuộc trò chuyện đang mở
 Object.defineProperty(state, 'chat', {configurable: true, enumerable: true,
   get(){ const id = cur(); if (!Array.isArray(chats[id])) chats[id] = []; return chats[id]; },
   set(v){ chats[cur()] = Array.isArray(v) ? v : []; }});
@@ -191,6 +200,10 @@ PV.save = (k) => { if (k === 'chat' || k === 'chats'){ Object.keys(chats).forEac
 
 /* ---------- answer only inside this guide's topic ---------- */
 const _answer = PV.answer;
+// cho trợ lý `to` trả lời hộ: giọng và phạm vi của `to`, nhưng ngữ cảnh vẫn là cuộc trò chuyện của trợ lý đang mở (`own`)
+const asGuide = async (to, own, fn) => { const keep = PV.todayGuide, keepOwner = PV._chatOwner;
+  PV._chatOwner = own.id; PV.todayGuide = () => to;
+  try { return await fn(); } finally { PV.todayGuide = keep; PV._chatOwner = keepOwner; } };
 PV.answer = async (text) => {
   const g = PV.todayGuide();
   const prev = [...state.chat].reverse().find(c => c.r !== 'me' && c.t);
@@ -201,13 +214,17 @@ PV.answer = async (text) => {
     // Câu thuộc phạm vi trợ lý khác → trợ lý đó trả lời LUÔN trong cuộc trò chuyện này (không bắt khách bấm chuyển, không phải hỏi lại)
     const to = PV.GUIDES.find(x => x.id === r.to);
     if (!to) return _answer(text);
-    const keep = PV.todayGuide; let ans;
-    PV.todayGuide = () => to;                     // trả lời bằng giọng và phạm vi của người phụ trách
-    try { ans = await _answer(text); } finally { PV.todayGuide = keep; }
+    let ans = await asGuide(to, g, () => _answer(text));   // trả lời bằng giọng và phạm vi của người phụ trách
     ans = Object.assign({}, ans);
     ans.t = T_(`${to.name} đây! Câu này về ${PV.GUIDE_TOPIC(r.to)} nên mình trả lời luôn nhé.\n\n`, `${to.name} here! This one is about ${PV.GUIDE_TOPIC(r.to)}, so I'll take it.\n\n`) + (ans.t || '');
     ans.by = to.id; ans.ask = {g: r.to, q: text, done: true};
     return ans;
+  }
+  // hỏi tiếp ("rẻ hơn?", "bỏ bưu điện", "ngày 2") → người vừa gợi ý trả lời tiếp, không phải trợ lý đang chọn
+  if (r.follow){
+    const src = [...state.chat].reverse().find(c => c.r !== 'me' && (r.follow === 'trip' ? c.trip : c.places && c.places.length));
+    const by = src && src.g && src.g !== g.id && PV.GUIDES.find(x => x.id === src.g);
+    if (by){ const ans = await asGuide(by, g, () => _answer(text)); return Object.assign({}, ans, {by: by.id}); }
   }
   return _answer(text);
 };

@@ -75,6 +75,17 @@ for (const lang of ['vi', 'en']){
   check('hỏi tiếp', PV.routeChat('mấy giờ mở cửa?', 'uyen', {lastPlaces: true}), 'any', 'mấy giờ mở cửa? (sau gợi ý quán)');
   check('hỏi tiếp', PV.routeChat('quán thứ 2 ở đâu', 'uyen', {lastPlaces: true}), 'any', 'quán thứ 2 ở đâu');
   check('chỉnh lịch trình', PV.routeChat('bỏ Chợ Bến Thành', 'ha', {lastTrip: true}), 'any', 'bỏ Chợ Bến Thành');
+  // câu có chủ đề MỚI sau một danh sách không phải "hỏi tiếp"
+  check('câu mới sau danh sách', PV.routeChat('Chụp ảnh ở đâu đẹp?', 'an', {lastPlaces: true}), 'kiet', 'Chụp ảnh ở đâu đẹp? (An vừa gợi ý)');
+  check('câu mới sau danh sách', PV.routeChat('bánh mì ở đâu ngon', 'kiet', {lastPlaces: true}), 'uyen', 'bánh mì ở đâu ngon (Kiệt vừa gợi ý)');
+  check('câu mới sau danh sách', PV.routeChat('Mua quà lưu niệm ở đâu?', 'uyen', {lastPlaces: true}), 'kiet', 'Mua quà lưu niệm ở đâu? (Uyên vừa gợi ý)');
+  check('hỏi tiếp (tiếng Anh)', PV.routeChat('opening hours?', 'an', {lastPlaces: true}), 'any', 'opening hours?');
+  check('hỏi tiếp (tiếng Anh)', PV.routeChat('something cheaper', 'an', {lastPlaces: true}), 'any', 'something cheaper');
+  // "thêm" trong câu kể chuyện không phải lệnh sửa lịch trình; "ngày 2" là lệnh
+  check('không phải lệnh lịch trình', PV.routeChat('Kể thêm về Dinh Độc Lập', 'kiet', {lastTrip: true}), 'an', 'Kể thêm về Dinh Độc Lập (đã có lịch trình)');
+  check('lịch trình ngày 2', PV.routeChat('ngày 2', 'kiet', {lastTrip: true}), 'any', 'ngày 2 (đã có lịch trình)');
+  // "ăn mặc", "Sài Gòn", "Tết" không phải món ăn
+  check('không phải ăn uống', PV.routeChat('Đi chùa cần ăn mặc thế nào?', 'uyen'), 'phuong', 'Đi chùa cần ăn mặc thế nào?');
 }
 console.log(`\n${pass} đạt, ${fail} lỗi`);
 process.exit(fail ? 1 : 0);

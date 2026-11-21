@@ -98,6 +98,8 @@ PV.weatherFX = (w) => {
 PV.stopWeatherFX = () => { const f = $('#wxfx'); if (f){ f.classList.add('out'); setTimeout(()=>f.remove(), 800); } };
 
 /* ---------- the guide pops up with advice ---------- */
+PV.weatherAdvice = (w, place) => advice(w, place);   // chatbot dùng
+PV.weatherIcon = icon;
 PV.weatherTip = (w, place) => {
   const old = $('#wxtip'); if (old) old.remove();
   const g = PV.todayGuide(); const tips = advice(w, place);

@@ -47,6 +47,7 @@ const TRAPS = [
     en:'Near the Cathedral and Post Office, cyclo and motorbike drivers offer rides: agree the full price before getting on, or book through an app.' }
 ];
 
+PV.TRAPS = TRAPS;   // chatbot dùng để trả lời câu hỏi về chặt chém
 const near = (a, b, r) => PV.dist(a, b) <= r;
 /* shortest distance (km) from point p to segment ab, all [lng,lat] */
 function segDist(p, a, b){

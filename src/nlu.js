@@ -63,8 +63,23 @@ function followUp(msg){
   const p = target && PV.byId(target);
   const nm = (x) => L(x.name, x.name_en || x.name);
 
+  // "ăn gì gần đó?", "chụp ảnh quanh đây?" → hỏi về khu quanh chỗ vừa nhắc
+  if (p && (chosen || inList(msg, REF)) && inList(msg, ['gần','quanh','xung quanh','kế bên','cạnh','gan','quanh do','near','nearby','around','close to']))
+    return PV._baseAnswer(msg + ' ' + L('gần', 'near') + ' ' + p.name);
+  // "rẻ hơn?", "something cheaper" → cùng loại, giá thấp hơn những chỗ vừa gợi ý
+  if (inList(msg, ['rẻ hơn','re hon','giá rẻ hơn','rẻ thôi','re thoi','cheaper','something cheaper','less expensive','on a budget'])){
+    const shown = ids.map(PV.byId), food = shown.filter(x => PV.foodType && PV.foodType(x)).length * 2 >= shown.length;
+    const lo = Math.min(...shown.map(x => x.price_level || 2));
+    const cand = PV.D.places.filter(x => !ids.includes(x.id) && (food ? PV.foodType(x) : !PV.foodType(x) && x.cats.some(c => shown.some(y => y.cats.includes(c))))
+      && (x.price_level || 2) < Math.max(lo, 2)).sort((a, b) => (a.price_level || 2) - (b.price_level || 2) || (b.rating || 0) - (a.rating || 0)).slice(0, 5);
+    if (cand.length){ PV._ctx.shown = [...(PV._ctx.shown || []), ...cand.map(x => x.id)]; return {t: L('Mấy chỗ rẻ hơn cho bạn nè:', 'Here are some cheaper options:'), places: cand.map(x => x.id)}; }
+    return {t: L('Những chỗ vừa gợi ý đã là mức giá thấp nhất mình có rồi.', 'Those are already the cheapest options I have.')};
+  }
+  // câu có chủ đề MỚI ("bánh mì ở đâu ngon?", "chụp ảnh ở đâu đẹp?") không phải hỏi tiếp → để phần trả lời thường xử lý
+  if (!chosen && !inList(msg, REF) && PV.routeChat && PV.routeChat(msg, PV.todayGuide().id, {lastPlaces: true}).verdict !== 'any') return null;
+
   // "còn quán nào khác?", "gợi ý thêm", "chỗ khác"
-  if (inList(msg, ['còn nữa không','còn không','còn nữa','khác không','quán khác','chỗ khác','nơi khác','món khác','thêm nữa','gợi ý thêm','gợi ý khác','cái khác','con nua khong','con nua','quan khac','cho khac','goi y them','more','other','others','something else','another'])){
+  if (inList(msg, ['còn chỗ nào','còn quán nào','còn nơi nào','chỗ nào nữa','quán nào nữa','nơi nào nữa','con cho nao','con quan nao','cho nao nua','quan nao nua','anything else','any other','any others','other places','others','more places','show me more','còn nữa không','còn không','còn nữa','khác không','quán khác','chỗ khác','nơi khác','món khác','thêm nữa','gợi ý thêm','gợi ý khác','cái khác','con nua khong','con nua','quan khac','cho khac','goi y them','more','other','others','something else','another'])){
     const ask = lastUserAsk(); if (!ask) return null;
     const ex = new Set([...(PV._ctx.shown||[]), ...ids]); PV._exclude = ex;
     let r; try { r = PV._baseAnswer(ask); } finally { PV._exclude = null; }
@@ -123,6 +138,8 @@ PV.localAnswer = (text) => {
     if (inList(msg, YES) && prevBot.trip) return {t: L('Tuyệt! Lịch trình đã sẵn sàng – bấm “Lưu lịch trình” để mở trên bản đồ nhé.', 'Great! Your itinerary is ready – tap “Save itinerary” to open it on the map.')};
     if (inList(msg, NO)) return {t: L('Không sao! Bạn cần gì khác thì cứ nhắn mình nhé.', 'No problem! Message me whenever you need something.')};
   }
+
+  if (short && inList(msg, YES) && words(msg).trim().split(' ').length <= 2) return {t: L('Ok nè! Bạn cần gì thêm cứ hỏi mình nhé 😊', 'Okay! Ask me anything else you need 😊')};
 
   // 4) follow-up questions about what was just suggested
   const f = followUp(msg); if (f) return f;

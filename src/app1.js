@@ -286,10 +286,12 @@ PV.buildTrip = (o={}) => {
   addStop(cur);
   must.slice(1).forEach(p => { if (!used.has(p.id)) addStop(p); });
   const sights = () => stops.filter(x => !x.tag).length;    // số điểm tham quan – quán ăn không chiếm chỗ, để không bỏ bữa chính
-  while (sights() < maxStops && stops.length < maxStops + 3 && t < end - 30){
+  const foods = () => stops.filter(x => x.tag).length, wantFood = foods() + (o.extraFood || 0);   // "thêm quán ăn": thêm 1 quán nếu nhịp ăn cho phép
+  while ((sights() < maxStops || foods() < wantFood) && stops.length < maxStops + 3 && t < end - 30){
     let best=null, bs=-1e9;
     for (const p of pool){
       if (used.has(p.id)) continue;
+      if (sights() >= maxStops && !PV.foodType(p)) continue;     // đủ điểm tham quan rồi – chỉ còn tìm quán
       const d = PV.dist(prev, p.coords);
       if (d > radius*1.6) continue;
       let s = scored.get(p.id) - d*(mode==='walk'?1.2:.35);

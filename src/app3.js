@@ -300,6 +300,14 @@ PV.answer = async (text) => {
   const key = null;   // API keys are never stored or sent from the browser (a server-side proxy will come later)
   let sampler = null;
   try { if (window.claude && window.claude.use) sampler = await window.claude.use('sample'); } catch(e){}
+  // thời tiết: hỏi Open-Meteo trực tiếp (trung tâm TP.HCM); không được thì để localAnswer trả lời chung
+  { const A = ' ' + text.toLowerCase().normalize('NFC').replace(/[^\p{L}\p{N}]+/gu,' ') + ' ', F = ' ' + PV.norm(text).replace(/[^a-z0-9]+/g,' ') + ' ';
+    const wq = [' thời tiết ',' trời mưa ',' có mưa ',' mưa không ',' nắng không ',' nóng không '].some(w => A.includes(w)) || [' thoi tiet ',' weather ',' rain ',' raining ',' rainy ',' sunny ',' temperature ',' forecast '].some(w => F.includes(w));
+    if (wq && PV.getWeather) { try {
+      const w = await PV.getWeather(10.7769, 106.7009), tips = PV.weatherAdvice ? PV.weatherAdvice(w, PV.L('trung tâm TP.HCM','central HCMC')) : [];
+      return {t: PV.L(`${PV.weatherIcon ? PV.weatherIcon(w) : ''} Trung tâm TP.HCM lúc này: ${w.desc}, ${Math.round(w.temp)}°C (cảm giác ${Math.round(w.feels)}°C), độ ẩm ${Math.round(w.hum)}%.`, `${PV.weatherIcon ? PV.weatherIcon(w) : ''} Central HCMC right now: ${w.desc}, ${Math.round(w.temp)}°C (feels like ${Math.round(w.feels)}°C), humidity ${Math.round(w.hum)}%.`)
+        + (tips.length ? '\n' + tips.map(x => '• ' + String(x).replace(/<[^>]+>/g, '')).join('\n') : ''), sources: [{name: 'Open-Meteo', url: 'https://open-meteo.com'}]};
+    } catch(e){} } }
   if (!key && !sampler) return PV.localAnswer(text);
   const sys = PV.systemPrompt();
   const hist = state.chat.slice(-12).filter(c=>c.t).map(c=>({role:c.r==='me'?'user':'assistant', content:c.t}));
@@ -358,12 +366,27 @@ PV.localAnswer = (text) => {
   const last = [...state.chat].reverse().find(c=>c.trip);
   if (last && (has('bo ','khong muon','thay ','doi ','dieu chinh','di bo thoi','them quan','them diem','remove','skip','drop','instead','adjust','change','add food','add a','walk only') || n.startsWith('bo '))) {
     const del = has('bo','khong muon','thay','doi','remove','skip','drop','instead');
-    const ex = last.trip.stops.map(s=>s.id).filter(id => { const p=PV.byId(id); return del && (n.includes(PV.norm(p.name.split(/[–(-]/)[0].trim())) || (p.name_en && n.includes(PV.norm(p.name_en.split('(')[0].trim())))); });
-    const keep = last.trip.stops.map(s=>s.id).filter(id=>!ex.includes(id));
-    const o = {must: keep, exclude: ex, start: last.trip.start, mode: has('di bo','walk')?'walk':last.trip.mode, stops: Math.max(keep.length + (has('them','add')?1:0) + ex.length, 3)};
-    if (has('them quan','an uong','an gi','food','eat')) o.weights = {food:2.5};
+    const ids0 = last.trip.stops.map(s=>s.id), isFood = id => !!PV.foodType(PV.byId(id));
+    let ex = del ? ids0.filter(id => { const p=PV.byId(id); return n.includes(PV.norm(p.name.split(/[–(-]/)[0].trim())) || (p.name_en && n.includes(PV.norm(p.name_en.split('(')[0].trim()))); }) : [];
+    if (del && !ex.length && PV.findPlaces){   // "remove the post office", "bỏ bảo tàng": tìm theo từ khóa trong các điểm của lịch trình
+      const rest = n.replace(/\b(bo|khong muon|thay|doi|di|diem|cho|remove|skip|drop|instead|the|please|di bo|lich trinh)\b/g,' ').trim();
+      const hit = rest && PV.findPlaces(rest).find(p => ids0.includes(p.id)); if (hit) ex = [hit.id]; }
+    const walk = has('di bo','walk'), addFood = has('them quan','them mon','an uong','an gi','add food','food','eat','restaurant');
+    if (del && !ex.length && !walk && !addFood) return {t: L(`Bạn muốn bỏ điểm nào? Lịch trình đang có: ${ids0.map(id=>PV.byId(id).name).join(', ')}.`, `Which stop should I remove? The plan has: ${ids0.map(id=>nm(PV.byId(id))).join(', ')}.`)};
+    const keep = ids0.filter(id=>!ex.includes(id));
+    const sightsKeep = keep.filter(id=>!isFood(id)).length, sightsEx = ex.filter(id=>!isFood(id)).length;
+    // lịch trình nhiều ngày: điểm thay thế không lấy lại chỗ đã đi ở các ngày khác
+    const otherDays = /^(Ngày|Day) \d/.test(last.trip.title || '') ? state.chat.filter(c => c.trip && c !== last && !/\((đã điều chỉnh|adjusted)\)$/.test(c.trip.title||'')).flatMap(c => c.trip.stops.map(s => s.id)).filter(id => !ids0.includes(id)) : [];
+    const o = {must: keep, exclude: [...ex, ...otherDays], start: last.trip.start, mode: walk?'walk':last.trip.mode,
+      stops: Math.max(sightsKeep + sightsEx + (has('them diem','add a stop','add a place','one more')?1:0), 2), extraFood: addFood ? 1 : 0};
+    if (addFood) o.weights = {food:2.5};
     const trip = PV.buildTrip(o); if (trip) { trip.title = last.trip.title.replace(/ \((đã điều chỉnh|adjusted)\)$/,'') + L(' (đã điều chỉnh)',' (adjusted)');
-      return {t: L(`Mình đã điều chỉnh lịch trình${ex.length?' – bỏ '+ex.map(id=>PV.byId(id).name).join(', '):''}. Thời gian và quãng đường đã được tính lại.`, `I've adjusted the itinerary${ex.length?' – removed '+ex.map(id=>nm(PV.byId(id))).join(', '):''}. Times and distances have been recalculated.`), trip}; }
+      const added = trip.stops.map(s=>s.id).filter(id => !ids0.includes(id)), nmv = id => PV.byId(id).name;
+      const parts = [ex.length && L('bỏ '+ex.map(nmv).join(', '), 'removed '+ex.map(id=>nm(PV.byId(id))).join(', ')),
+        added.length && L('thêm '+added.map(nmv).join(', '), 'added '+added.map(id=>nm(PV.byId(id))).join(', ')),
+        walk && last.trip.mode !== 'walk' && L('chuyển sang đi bộ', 'switched to walking')].filter(Boolean);
+      const noFood = addFood && !added.some(isFood) ? L(' Chưa thêm được quán ăn vì các bữa đã kín – ăn thêm lúc này sẽ quá sát bữa trước.', ' I could not add another food stop – the meals are already well spaced and one more would be too soon.') : '';
+      return {t: L(`Mình đã điều chỉnh lịch trình${parts.length?' – '+parts.join('; '):''}. Thời gian và quãng đường đã được tính lại.`, `I've adjusted the itinerary${parts.length?' – '+parts.join('; '):''}. Times and distances have been recalculated.`) + noFood, trip}; }
   }
   // street story
   const st = D.streets.find(s => n.includes(PV.norm(s.name)) && has('duong','ten duong','y nghia','nghia la gi','nghia','la ai','la gi','vi sao','tai sao','street','mean','meaning','name','story','why','who'));
@@ -373,6 +396,48 @@ PV.localAnswer = (text) => {
   // specific place
   const keyOf = p => [PV.norm(p.name.split(/[–(-]/)[0].trim()), p.name_en ? PV.norm(p.name_en.split('(')[0].trim()) : null].filter(Boolean);
   const pl = D.places.slice().sort((a,b)=>b.name.length-a.name.length).find(p => !EX.has(p.id) && keyOf(p).some(k => k.length>3 && W.includes(' '+k.replace(/[^a-z0-9]+/g,' ').trim()+' ')));
+  // ---- những câu đúng chủ đề du lịch nhưng trước đây rơi vào câu trả lời chung chung ----
+  // về chính web
+  if (has('ai lam','ai tao','ai viet','ai phat trien','nhom nao lam','personavel la gi','web nay la gi','web nay cua ai','who made','who built','who created','who developed','what is personavel','about this app','about this website'))
+    return {t: L('Personavel là bản đồ du lịch tự túc TP.HCM do nhóm học sinh 11A13, trường THPT Lê Quý Đôn làm ra. Web gom bản đồ địa điểm, câu chuyện tên đường, lịch trình tự động và 5 trợ lý ảo (An, Uyên, Hà, Kiệt, Phương) vào một chỗ. Your Trip, Your Story 💙',
+      'Personavel is a self-guided travel map of Ho Chi Minh City made by student team 11A13 at Lê Quý Đôn High School. It brings together a map of places, street-name stories, automatic itineraries and 5 virtual guides (An, Uyên, Hà, Kiệt, Phương). Your Trip, Your Story 💙')};
+  // trang phục khi vào chùa, nhà thờ ("ăn mặc" không phải ăn uống)
+  if (has('an mac','mac gi','mac the nao','mac ra sao','trang phuc','quan ao','dress','dress code','wear','what to wear') && has('chua','nha tho','den','mieu','hoi quan','pagoda','temple','church','cathedral','shrine'))
+    return {t: L('Khi vào chùa, đền, nhà thờ ở Sài Gòn:\n• Mặc kín vai và đầu gối – tránh áo hai dây, quần đùi, váy ngắn (mang theo khăn choàng là tiện nhất).\n• Cởi giày dép trước khi vào chánh điện chùa; nói nhỏ, không chạm vào tượng hay đồ thờ.\n• Không chĩa chân về phía bàn thờ, không đi ngang trước mặt người đang lễ.\n• Hỏi trước khi chụp ảnh nhà sư, người đang cầu nguyện; tắt đèn flash trong điện.\n• Nhà thờ thường không cho tham quan trong giờ lễ – xem giờ mở cửa ở thẻ địa điểm nhé.',
+      'Visiting pagodas, temples and churches in Saigon:\n• Cover shoulders and knees – no tank tops, shorts or short skirts (a light scarf helps).\n• Take off your shoes before entering a pagoda’s main hall; speak quietly and do not touch statues or offerings.\n• Do not point your feet at the altar or walk right in front of people praying.\n• Ask before photographing monks or worshippers; no flash inside.\n• Churches usually close to visitors during Mass – check the opening hours on the place card.')};
+  // lễ hội, Tết
+  if (has('le hoi','tet','trung thu','giang sinh','noel','vu lan','ram thang gieng','festival','festivals','lunar new year','christmas','mid autumn') && !has('lich trinh','itinerary','plan','trip'))
+    return {t: L('Các dịp lễ nổi bật ở Sài Gòn:\n• Tết Nguyên Đán (tháng 1–2 dương lịch): đường hoa Nguyễn Huệ, hội hoa xuân, phố sách Tết; nhiều quán nghỉ vài ngày đầu năm, phố xá vắng hơn thường lệ.\n• Tết Trung thu (rằm tháng 8 âm lịch): phố lồng đèn Lương Nhữ Học, múa lân khắp các phường.\n• Giáng sinh: khu Nhà thờ Đức Bà, Nguyễn Huệ, nhà thờ Tân Định trang trí rực rỡ, rất đông tối 24/12.\n• Lễ 30/4 – 1/5, 2/9 và Tết Dương lịch: thường có bắn pháo hoa và phân luồng ở trung tâm.\nNgày lễ rất đông – nên đi sớm, gửi xe xa trung tâm và theo dõi thông báo phân luồng nhé.',
+      'Main festive times in Saigon:\n• Lunar New Year (Jan–Feb): the Nguyễn Huệ flower street, spring flower fairs and the Tết book street; many shops close for the first days and the city is quieter than usual.\n• Mid-Autumn Festival (15th day of the 8th lunar month): the lantern street on Lương Nhữ Học and lion dances everywhere.\n• Christmas: the Cathedral area, Nguyễn Huệ and Tân Định church are lit up; very crowded on the evening of 24 Dec.\n• 30 Apr – 1 May, 2 Sep and New Year’s Eve: usually fireworks and traffic diversions in the centre.\nHolidays are packed – go early, park away from the centre and watch for diversion notices.')};
+  // ra sân bay
+  if (has('san bay','tan son nhat','airport'))
+    return {t: L('Đi sân bay Tân Sơn Nhất từ trung tâm (Quận 1 cũ):\n• Grab/taxi: khoảng 20–40 phút, giờ cao điểm (16h30–19h) có thể hơn 1 tiếng – nên đi sớm.\n• Xe buýt 109 (từ công viên 23/9) và 152: rẻ, có chỗ để hành lý, chạy tới tối.\nGiá Grab thay đổi theo giờ – xem giá chính xác trong ứng dụng trước khi đặt.',
+      'Getting to Tân Sơn Nhất airport from the centre (old District 1):\n• Grab/taxi: about 20–40 min; at rush hour (4:30–7 pm) it can take over an hour – leave early.\n• Bus 109 (from 23/9 Park) and bus 152: cheap, room for luggage, running into the evening.\nGrab fares change with demand – check the exact price in the app before booking.')};
+  // dị ứng
+  if (has('di ung','allergy','allergic','allergies'))
+    return {t: L('Nếu bạn bị dị ứng, hãy nói rõ với quán trước khi gọi món, ví dụ: “Tôi bị dị ứng đậu phộng” hoặc “Tôi bị dị ứng hải sản”.\n• Đậu phộng hay có trong: gỏi cuốn (nước chấm), bánh tráng trộn, xôi, chè, các món gỏi.\n• Hải sản, tôm khô hay có trong: bánh tráng trộn, mắm, nước dùng bún riêu.\nNếu dị ứng nặng, luôn mang thuốc theo người. Bạn cần mình gợi ý quán chay hoặc món đơn giản không?',
+      'If you have an allergy, tell the staff before ordering, e.g. “Tôi bị dị ứng đậu phộng” (I am allergic to peanuts) or “Tôi bị dị ứng hải sản” (seafood).\n• Peanuts often appear in: spring-roll dipping sauce, bánh tráng trộn, sticky rice, chè desserts and salads.\n• Seafood and dried shrimp often appear in: bánh tráng trộn, fermented sauces and bún riêu broth.\nIf your allergy is severe, always carry your medication. Want me to suggest vegetarian places or simple dishes?')};
+  // thời tiết khi không lấy được dữ liệu trực tiếp (bản có mạng trả lời bằng số liệu thật ở PV.answer)
+  if (hasA('thời tiết','trời mưa','có mưa','mưa không','nắng không','nóng không') || has('thoi tiet','weather','rain','raining','rainy','sunny','temperature','forecast') || (plain && has('troi mua','co mua','mua khong','nang khong')))
+    return {t: L('Mình chưa lấy được thời tiết trực tiếp lúc này. Sài Gòn nắng nóng quanh năm (khoảng 26–35°C); mùa mưa từ tháng 5 đến tháng 11, thường mưa rào buổi chiều 30–60 phút rồi tạnh. Nên mang dù gọn, kem chống nắng và nước uống. Xem thời tiết từng nơi trong thẻ địa điểm nhé.',
+      'I cannot get live weather right now. Saigon is hot all year (about 26–35°C); the rainy season runs May to November, usually with a 30–60 minute afternoon downpour. Bring a small umbrella, sunscreen and water. Each place card shows its live weather.')};
+  // hai địa điểm + đi lại ("đi Grab từ chợ Bến Thành tới Dinh Độc Lập bao nhiêu tiền?", "how far from A to B")
+  { const both = D.places.filter(p => p.coords && keyOf(p).some(k => k.length>3 && W.includes(' '+k.replace(/[^a-z0-9]+/g,' ').trim()+' ')))
+      .map(p => [p, Math.min(...keyOf(p).map(k => { const i = W.indexOf(' '+k.replace(/[^a-z0-9]+/g,' ').trim()+' '); return i < 0 ? 1e9 : i; }))]).sort((a, b) => a[1] - b[1]).map(x => x[0])
+      .filter((p, i, arr) => arr.findIndex(q => PV.dist(q.coords, p.coords) < .15) === i);   // cùng một chỗ (vd 2 bản ghi "Chợ Bến Thành") chỉ tính 1 lần
+    if (both.length >= 2 && has('tu','den','toi','qua','sang','di','grab','taxi','xe','bao xa','bao lau','bao nhieu tien','from','to','how far','how long','how much','get','route')) {
+      const [a, b] = both, walk = PV.travel(a.coords, b.coords, 'walk'), moto = PV.travel(a.coords, b.coords, 'moto'), fare = PV.legCost({km: moto.km}, 'taxi');
+      const r = x => Math.round(x / 1000) * 1000, vnd = x => r(x).toLocaleString('vi-VN') + 'đ';
+      return {t: L(`Từ ${a.name} tới ${b.name}: khoảng ${PV.fmtKm(moto.km)}.\n• Đi bộ: ~${walk.min} phút${walk.min > 25 ? ' (hơi xa, trời nắng nên đi xe)' : ''}.\n• Xe máy / Grab: ~${moto.min} phút.\n• Grab ô tô / taxi: ước tính ${vnd(fare.min)}–${vnd(fare.max)} (giá thay đổi theo giờ, xem chính xác trong ứng dụng).${PV.isRush && PV.isRush(new Date().getHours()*60+new Date().getMinutes()) ? '\n⚠️ Đang giờ cao điểm – cộng thêm thời gian kẹt xe.' : ''}`,
+        `From ${nm(a)} to ${nm(b)}: about ${PV.fmtKm(moto.km)}.\n• Walking: ~${walk.min} min${walk.min > 25 ? ' (a bit far in the heat – take a ride)' : ''}.\n• Motorbike / Grab bike: ~${moto.min} min.\n• Grab car / taxi: roughly ${vnd(fare.min)}–${vnd(fare.max)} (fares vary – check the app).${PV.isRush && PV.isRush(new Date().getHours()*60+new Date().getMinutes()) ? '\n⚠️ It is rush hour – allow extra time.' : ''}`), places: [a.id, b.id]};
+    } }
+  // chặt chém, lừa đảo
+  if (has('chat chem','lua dao','bi lua','moi chao','cheo keo','gia cao','nang gia','scam','scams','rip off','ripoff','overcharge','overcharged','tourist trap','cheat','cheated','touts')) {
+    const T = PV.TRAPS || [], here = pl && pl.coords ? T.filter(x => PV.dist(pl.coords, x.c) <= Math.max(x.r, .4)) : [];
+    const list = (here.length ? here : T).map(x => '• ' + L(x.vi, x.en)).join('\n');
+    return {t: L(`${here.length ? 'Quanh ' + pl.name + ' cần lưu ý' : 'Những chỗ du khách hay bị chèo kéo, nâng giá ở trung tâm'}:\n${list}\nMẹo chung: hỏi giá trước khi mua hoặc lên xe, gọi xe qua ứng dụng, mặc cả lịch sự và cứ từ chối nếu thấy không ổn.`,
+      `${here.length ? 'Things to watch around ' + nm(pl) : 'Where visitors are often touted or overcharged in the centre'}:\n${list}\nGeneral tips: ask the price before buying or getting on, book rides in an app, bargain politely and simply walk away if it feels wrong.`), places: pl ? [pl.id] : []};
+  }
   // "ăn gì gần Chợ Bến Thành", "chụp ảnh quanh Dinh Độc Lập": gợi ý các điểm gần điểm được nhắc tới, không giới thiệu lại chính nó
   const nearQ = has('gan','quanh','ke ben','canh','gan do','xung quanh','near','nearby','around','close to');
   const foodQ = has('an','an gi','quan an','an uong','an ngon','ngon','do an','mon','eat','food','restaurant','pho','banh mi','dessert','snack');
@@ -392,13 +457,21 @@ PV.localAnswer = (text) => {
     const t = `${nm(pl)}: ${L(pl.desc, pl.desc_en || PV.tr(pl.desc))}\n📍 ${pl.address}\n🕒 ${hours||L('Giờ mở cửa chưa xác minh','Opening hours not verified')}\n🎟️ ${price}${hl.length?'\n✨ '+hl.slice(0,3).join(', '):''}${pl.geo==='approx'?L('\n(Lưu ý: vị trí trên bản đồ là gần đúng, bạn nên kiểm tra lại.)','\n(Note: the map position is approximate, please double-check.)'):''}`;
     return {t, places:[pl.id], sources:[pl.source?{name:pl.source_name,url:pl.source}:{name:PV.tr(pl.source_name||'Khảo sát của nhóm')}]};
   }
-  // itinerary
-  if (has('lich trinh','ke hoach','len lich','hanh trinh','di dau','1 ngay','mot ngay','nua ngay','buoi sang','buoi toi','buoi chieu','toi nay','itinerary','plan','trip','schedule','one day','1 day','half day','tonight','evening','morning','afternoon','where to go')) {
+  // itinerary (kể cả "ngày 2" sau khi đã có lịch trình)
+  const nextDayQ = state.chat.some(c=>c.trip) && has('ngay 2','ngay thu 2','ngay thu hai','ngay 3','ngay thu 3','ngay tiep','ngay tiep theo','hom sau','day 2','day two','day 3','next day','second day');
+  if (nextDayQ || has('lich trinh','ke hoach','len lich','hanh trinh','di dau','1 ngay','mot ngay','nua ngay','buoi sang','buoi toi','buoi chieu','toi nay','itinerary','plan','trip','schedule','one day','1 day','half day','tonight','evening','morning','afternoon','where to go')) {
     const o = {};
-    if (evening()) { o.start='17:30'; o.hours=5; }
-    else if (has('buoi chieu','afternoon')) { o.start='14:00'; o.hours=5; }
-    else if (has('buoi sang','nua ngay','morning','half day')) { o.start='07:30'; o.hours=4.5; }
-    const tm = text.match(/(\d{1,2})\s*(h|giờ|:|am|pm)\s*(\d{2})?/i); if (tm && +tm[1]<24) { let h=+tm[1]; if (/pm/i.test(tm[2]) && h<12) h+=12; o.start = String(h).padStart(2,'0')+':'+(tm[3]||'00'); }
+    // "ngày 2", "day 2", "ngày tiếp theo": xếp ngày mới, không lặp lại các điểm đã có ở những ngày trước
+    const prevTrips = state.chat.filter(c => c.trip).map(c => c.trip);
+    const nextDay = prevTrips.length && (has('ngay 2','ngay thu 2','ngay thu hai','ngay 3','ngay thu 3','ngay tiep','ngay tiep theo','ngay mai','hom sau','day 2','day two','day 3','next day','second day','tomorrow') );
+    if (nextDay) o.exclude = [...new Set(prevTrips.flatMap(t => t.stops.map(s => s.id)))];
+    const days = (n.match(/(\d)\s*(ngay|days?)\b/) || [])[1] | 0;
+    const dur = n.match(/(\d+(?:[.,]5)?)\s*(tieng|hours?|hrs?)\b/) || n.match(/(?:trong|khoang|tam|mat)\s*(\d+(?:[.,]5)?)\s*gio\b/);
+    if (dur) o.hours = Math.min(12, Math.max(1.5, parseFloat(dur[1].replace(',','.'))));
+    if (evening()) { o.start='17:30'; o.hours=o.hours||5; }
+    else if (has('buoi chieu','afternoon')) { o.start='14:00'; o.hours=o.hours||5; }
+    else if (has('buoi sang','nua ngay','morning','half day')) { o.start='07:30'; o.hours=o.hours||4.5; }
+    const tm = text.replace(/(\d+(?:[.,]5)?)\s*(tiếng|tieng|hours?|hrs?)\b/gi, ' ').replace(/(trong|khoảng|khoang|tầm|tam|mất|mat)\s*\d+(?:[.,]5)?\s*(giờ|gio)\b/gi, ' ').match(/(\d{1,2})\s*(h|giờ|:|am|pm)\s*(\d{2})?/i); if (tm && +tm[1]<24) { let h=+tm[1]; if (/pm/i.test(tm[2]) && h<12) h+=12; o.start = String(h).padStart(2,'0')+':'+(tm[3]||'00'); }
     if (has('tiet kiem','re','sinh vien','it tien','cheap','budget','student')) o.budget = 1;
     if (has('di bo','walk')) o.mode='walk'; else if (has('taxi','grab')) o.mode='taxi'; else if (has('xe may','motorbike','scooter')) o.mode='moto';
     const w = {};
@@ -411,9 +484,14 @@ PV.localAnswer = (text) => {
     if (!trip) return {t:L('Mình chưa tìm được lịch trình phù hợp. Bạn thử nói rõ hơn khung giờ hoặc sở thích nhé!','I could not find a suitable itinerary. Try telling me the time of day or what you like!')};
     const night = o.start && PV.toMin(o.start) >= 17*60;
     trip.title = night ? L('Sài Gòn về đêm','Saigon by night') : L('Một ngày khám phá Sài Gòn','A day exploring Saigon');
+    const dayNo = nextDay ? prevTrips.length + 1 : 0;
+    if (dayNo) trip.title = L(`Ngày ${dayNo} – `, `Day ${dayNo} – `) + trip.title;
+    else if (days >= 2) trip.title = L('Ngày 1 – ', 'Day 1 – ') + trip.title;
+    const dayNote = days >= 2 && !nextDay ? L(`\nĐây là Ngày 1 trong ${days} ngày. Gõ “ngày 2” để mình xếp tiếp các điểm khác, không trùng với hôm nay.`, `\nThis is Day 1 of ${days}. Type “day 2” and I'll plan different places for the next day.`)
+      : dayNo ? L(`\nNgày ${dayNo} không lặp lại điểm nào của những ngày trước.`, `\nDay ${dayNo} does not repeat any place from earlier days.`) : '';
     const per = state.profile?.persona;
-    return {t: L(`Mình đã lên lịch trình ${trip.stops.length} điểm, bắt đầu lúc ${trip.start}, di chuyển bằng ${PV.MODES[trip.mode].name.toLowerCase()}. Các điểm được chọn theo ${per?'phong cách “'+per.name+'”':'những địa điểm nổi bật'}, ưu tiên gần nhau và xếp bữa ăn vào khung trưa/tối.${!state.profile?.prefs?'\nGợi ý: hãy làm bài phân tích phong cách (trong Trang cá nhân) để mình đề xuất chính xác hơn.':''}\nBạn có thể lưu, hoặc nói “bỏ [tên địa điểm]”, “thêm quán ăn”, “đi bộ thôi”… để mình điều chỉnh.`,
-      `I've planned a ${trip.stops.length}-stop itinerary starting at ${trip.start}, travelling by ${PV.tr(PV.MODES[trip.mode].name).toLowerCase()}. Stops are chosen for ${per?'your “'+PV.tr(per.name)+'” style':'their highlights'}, kept close together, with meals at lunch/dinner time.${!state.profile?.prefs?'\nTip: take the style analysis (in My profile) for better suggestions.':''}\nYou can save it, or say “remove [place]”, “add food”, “walk only”… and I'll adjust it.`), trip};
+    return {t: L(`Mình đã lên lịch trình ${trip.stops.length} điểm (từ ${trip.start} đến khoảng ${trip.stops.length ? trip.stops[trip.stops.length-1].leave : trip.start}), di chuyển bằng ${PV.MODES[trip.mode].name.toLowerCase()}. Các điểm được chọn theo ${per?'phong cách “'+per.name+'”':'những địa điểm nổi bật'}, ưu tiên gần nhau và xếp bữa ăn vào khung trưa/tối.${!state.profile?.prefs?'\nGợi ý: hãy làm bài phân tích phong cách (trong Trang cá nhân) để mình đề xuất chính xác hơn.':''}\nBạn có thể lưu, hoặc nói “bỏ [tên địa điểm]”, “thêm quán ăn”, “đi bộ thôi”… để mình điều chỉnh.`,
+      `I've planned a ${trip.stops.length}-stop itinerary (${trip.start} to about ${trip.stops.length ? trip.stops[trip.stops.length-1].leave : trip.start}), travelling by ${PV.tr(PV.MODES[trip.mode].name).toLowerCase()}. Stops are chosen for ${per?'your “'+PV.tr(per.name)+'” style':'their highlights'}, kept close together, with meals at lunch/dinner time.${!state.profile?.prefs?'\nTip: take the style analysis (in My profile) for better suggestions.':''}\nYou can save it, or say “remove [place]”, “add food”, “walk only”… and I'll adjust it.`) + dayNote, trip};
   }
   // category suggestions
   const near = has('gan day','gan toi','quanh day','gan nhat','near','nearby','around');
@@ -421,7 +499,7 @@ PV.localAnswer = (text) => {
   const gps = near && !PV.userPos ? L(' (bật “Vị trí của tôi” trên bản đồ để mình xếp theo khoảng cách)',' (turn on “My location” on the map so I can sort by distance)') : '';
   const DISH = {'pho':'phở','banh mi':'bánh mì','bun bo':'bún bò','bun cha':'bún chả','com tam':'cơm tấm','che':'chè','oc':'ốc','banh xeo':'bánh xèo','xoi':'xôi','hu tieu':'hủ tiếu','chao':'cháo','lau':'lẩu','banh trang':'bánh tráng','sup cua':'súp cua','banh flan':'bánh flan','bot chien':'bột chiên','chay':'chay','bo kho':'bò kho','banh beo':'bánh bèo','bach tuoc':'bạch tuộc','mi ':'mì','noodle':'mì','vegetarian':'chay','vegan':'chay','snail':'ốc','sandwich':'bánh mì','broken rice':'cơm tấm','pancake':'bánh xèo','sticky rice':'xôi','dessert':'chè','soup':'súp cua','hotpot':'lẩu'};
   const AMBIG = {'pho':['phở'],'chao':['cháo'],'lau':['lẩu'],'che':['chè'],'oc':['ốc'],'xoi':['xôi'],'chay':['chay','ăn chay','quán chay','đồ chay']};
-  const AMBIG_PLAIN = {'pho':['an pho','quan pho','pho bo','pho ga','to pho','pho ngon'],'chao':['an chao','quan chao','chao long','chao ga','chao vit','chao ca','chao suon','chao ech'],'lau':['an lau','quan lau','lau thai','lau de','lau bo','lau hai san'],'che':['an che','quan che','che ba mau','che thai','tiem che','che ngon'],'oc':['an oc','quan oc','oc ngon'],'xoi':['an xoi','xoi ga','xoi man','quan xoi'],'chay':['an chay','quan chay','do chay','com chay']};
+  const AMBIG_PLAIN = {'pho':['an pho','quan pho','pho bo','pho ga','to pho','pho ngon','eat pho','good pho','best pho','pho place','pho places','pho restaurant','pho shop','some pho','for pho','pho near'],'chao':['an chao','quan chao','chao long','chao ga','chao vit','chao ca','chao suon','chao ech'],'lau':['an lau','quan lau','lau thai','lau de','lau bo','lau hai san'],'che':['an che','quan che','che ba mau','che thai','tiem che','che ngon'],'oc':['an oc','quan oc','oc ngon'],'xoi':['an xoi','xoi ga','xoi man','quan xoi'],'chay':['an chay','quan chay','do chay','com chay']};
   const dk = Object.keys(DISH).find(d => { const k = d.trim();
     if (AMBIG[k]) return plain ? has(...AMBIG_PLAIN[k]) : hasA(...AMBIG[k]);
     return has(k); });  if (dk) { const da = DISH[dk].toLowerCase(), dn = PV.norm(DISH[dk]);
@@ -430,7 +508,7 @@ PV.localAnswer = (text) => {
     let ids = pick(p=>p.cats.includes('food') && tA(p).includes(' '+da+' '), 5);              // exact dish with tones (cháo ≠ chảo)
     if (!ids.length && !AMBIG[dk.trim()]) ids = pick(p=>p.cats.includes('food') && tN(p).includes(' '+dn+' '), 5); if (ids.length) return {t: L(`Món “${DISH[dk]}” thì bạn có thể thử những quán này${gps}:`, `For “${DISH[dk]}”, try these places${gps}:`), places:ids}; }
   // dish name typed by the user ("bún riêu", "milo dầm", "bánh tiêu"…) → places whose name / signature dishes contain it
-  { const GEN = new Set(['quan','goi','y','an','ngon','o','dau','gan','day','minh','muon','cho','nao','di','toi','ban','co','khong','the','nhat','tim','thu','mon','nhung','cac','va','voi','la','o?','xin','chao','hello','hi','oi','a','nhe','nha','cam','on','ban','la','ai','gi','ten','khoe']);
+  { const GEN = new Set(['sai','gon','saigon','tp','hcm','ho','chi','minh','thanh','le','hoi','tet','tham','quan','lich','su','van','hoa','nha','tho','chua','mac','ao','an mac','goi','y','an','ngon','o','dau','gan','day','minh','muon','cho','nao','di','toi','ban','co','khong','the','nhat','tim','thu','mon','nhung','cac','va','voi','la','o?','xin','chao','hello','hi','oi','a','nhe','nha','cam','on','ban','la','ai','gi','ten','khoe']);
     const w = n.replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean); const grams = [];
     for (let i=0;i<w.length-1;i++){ if (!GEN.has(w[i]) && !GEN.has(w[i+1])) grams.push(w[i]+' '+w[i+1]); }
     if (grams.length && !has('mua qua','luu niem','mua sam','shopping','souvenir','qua tang')){
@@ -438,7 +516,7 @@ PV.localAnswer = (text) => {
       if (hits.length) return {t:L(`Món bạn hỏi có ở ${hits.length>1?'những quán này':'quán này'} nè:`, `You can find that dish here:`), places: hits.slice(0,5).map(x=>x[0].id)};
     } }
   if (has('mua qua',' qua tang','qua luu niem','qua ve','luu niem','dac san','mua sam','shopping','thoi trang','souvenir','gift','buy','fashion')) return {t:L('Mua quà và mua sắm thì bạn ghé những nơi này nhé:','For gifts and shopping, try these places:'), places:pick(p=>p.cats.includes('shopping'),5)};
-  if (has('an','quan','mon','doi','ngon','am thuc','food','eat','hungry','restaurant','lunch','dinner','breakfast')) return {t: L(`Một vài quán ngon hợp khẩu vị của bạn${gps}:`, `Some tasty places that match your taste${gps}:`), places:pick(p=>p.cats.includes('food'))};
+  if (has('an','quan','mon','doi','ngon','am thuc','food','eat','hungry','restaurant','lunch','dinner','breakfast') && !has('an mac','quan ao')) return {t: L(`Một vài quán ngon hợp khẩu vị của bạn${gps}:`, `Some tasty places that match your taste${gps}:`), places:pick(p=>p.cats.includes('food'))};
   if (evening()) return {t:L('Buổi tối ở Sài Gòn, bạn có thể ghé phố ẩm thực, chợ đêm hoặc ngắm kiến trúc lên đèn:','In the evening you can try food streets, night markets or see the city lit up:'), places:pick(p=>{ const h=PV.parseHours(p); return h && h[1] >= 21*60; },5)};
   if (has('lich su','bao tang','di tich','van hoa','nha tho','chua','history','museum','culture','church','pagoda','heritage')) return {t:L('Những điểm văn hóa – lịch sử nên ghé:','Cultural and historic places worth visiting:'), places:pick(p=>p.cats.includes('history'),5), sources:[{name:L('Wikipedia & website các địa điểm','Wikipedia & official websites')}]};
   if (has('di dao','dao pho','dao choi','pho di bo','di bo dao','walk around','stroll','walking street')) return {t:L('Đi dạo thì mấy chỗ này vừa đẹp vừa gần nhau, bạn có thể đi bộ nối tiếp:','For a stroll, these spots are pretty and close together – easy to walk between:'), places:pick(p=>p.cats.includes('checkin')||p.cats.includes('history'),5)};
